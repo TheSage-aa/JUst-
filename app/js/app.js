@@ -37,14 +37,18 @@ function touchStreak(state) {
   return state;
 }
 
+const ASSETS = "assets/characters/";
+
 function mascotHTML() {
-  return `<div class="mascot"><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div></div>`;
+  return `<img class="mascot-img" src="${ASSETS}buggy_avatar.png" alt="Buggy" />`;
 }
 
+// the Crew, per the Character Bible — cycled beside the path so users start
+// to recognize who's who, the way you would in a real group chat
 const DECORATIONS = [
-  { cls: "deco-book", prop: "📖" },
-  { cls: "deco-heart", prop: "🩺" },
-  { cls: "deco-cheer", prop: "✨" }
+  { id: "zara", name: "Zara", img: "zara_avatar.png", ring: "#e0304f" },
+  { id: "dr_ayo", name: "Dr. Ayo", img: "dr_ayo_avatar.png", ring: "#2fb0ea" },
+  { id: "bello", name: "Bello", img: "bello_avatar.png", ring: "#ff8a3d" }
 ];
 
 function decorationHTML(index, side) {
@@ -52,9 +56,9 @@ function decorationHTML(index, side) {
   const delay = (index % 4) * 0.4;
   return `
     <li class="deco-wrap ${side}">
-      <div class="deco ${d.cls}" style="animation-delay:${delay}s">
-        <div class="deco-mascot"><div class="eye l"></div><div class="eye r"></div></div>
-        <div class="deco-prop">${d.prop}</div>
+      <div class="deco" style="animation-delay:${delay}s">
+        <img class="deco-avatar-img" src="${ASSETS}${d.img}" alt="${d.name}" style="box-shadow: 0 3px 0 ${d.ring}66, 0 0 0 3px ${d.ring}33;" />
+        <div class="deco-name">${d.name}</div>
         <div class="deco-sparkle s1">✨</div>
         <div class="deco-sparkle s2">✨</div>
       </div>
@@ -227,7 +231,7 @@ function renderCompletion() {
   root.innerHTML = `
     <div class="completion-screen">
       <div class="confetti">🎉 🎊 🎉</div>
-      <div class="completion-mascot"><div class="eye l"></div><div class="eye r"></div></div>
+      <img class="completion-mascot-img" src="${ASSETS}buggy_happy.png" alt="Buggy celebrating" />
       <p class="eyebrow">Track complete</p>
       <h1>You finished ${TRACK.title}!</h1>
       <p class="stat-row-inline">🔥 ${state.streak}-day streak &middot; ⭐ ${TRACK.lessons.length}/${TRACK.lessons.length} lessons</p>
