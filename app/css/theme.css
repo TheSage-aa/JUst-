@@ -1,0 +1,274 @@
+/* Shared visual system for the onboarding/auth flow, matching the founder's
+   Saabi UI mockups (cream/blush background, amber-brown ink, teal + gold accents). */
+
+:root {
+  --t-bg-a: #fff8f5;
+  --t-bg-b: #eef0e3;
+  --t-bg-c: #fdf7f4;
+  --t-surface: #ffffff;
+  --t-ink: #2b1f14;
+  --t-ink-soft: #6b5d4f;
+  --t-gold: #92600e;
+  --t-gold-bright: #c98a1e;
+  --t-orange: #ff9900;
+  --t-orange-shadow: #c2740a;
+  --t-peach: #f8caa9;
+  --t-teal: #159c8c;
+  --t-teal-soft: #dff3f0;
+  --t-badge-gold: #e8a723;
+  --t-badge-gold-soft: #fdf1da;
+  --t-border: #f0e4da;
+}
+
+* { box-sizing: border-box; }
+
+body.theme-cream {
+  margin: 0;
+  font-family: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Verdana, sans-serif;
+  color: var(--t-ink);
+  background: linear-gradient(160deg, var(--t-bg-a) 0%, var(--t-bg-b) 55%, var(--t-bg-c) 100%);
+  min-height: 100vh;
+}
+
+.t-screen {
+  max-width: 460px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 24px 24px 40px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.t-deco-heart, .t-deco-star {
+  position: absolute;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+.t-deco-heart { top: 60px; right: -30px; width: 170px; }
+.t-deco-star { bottom: 160px; left: -40px; width: 140px; }
+
+.t-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+.t-wordmark {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--t-gold);
+  margin: 0;
+}
+.t-streak-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--t-peach);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--t-ink);
+}
+
+.t-hero {
+  margin: 28px auto 20px;
+  position: relative;
+  z-index: 1;
+  width: 200px;
+}
+.t-hero-card {
+  background: var(--t-surface);
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 12px 30px rgba(146, 96, 14, 0.14);
+  transform: rotate(-2deg);
+}
+.t-hero-card img { width: 100%; display: block; }
+
+.t-heading {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  margin: 0 0 8px;
+}
+.t-heading h1 {
+  font-size: 27px;
+  font-weight: 900;
+  margin: 0 0 10px;
+  line-height: 1.25;
+}
+.t-heading h1 .accent { color: var(--t-gold-bright); }
+.t-subtitle {
+  text-align: center;
+  color: var(--t-ink-soft);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 26px;
+  position: relative;
+  z-index: 1;
+}
+
+.t-card-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: auto;
+  position: relative;
+  z-index: 1;
+}
+.t-feature-card {
+  flex: 1;
+  background: var(--t-surface);
+  border-radius: 18px;
+  padding: 20px 14px;
+  text-align: center;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.03);
+}
+.t-feature-card.teal { box-shadow: 0 10px 24px -8px rgba(21, 156, 140, 0.35); }
+.t-feature-card.gold { box-shadow: 0 10px 24px -8px rgba(232, 167, 35, 0.35); }
+.t-feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+.t-feature-icon.teal { background: var(--t-teal-soft); color: var(--t-teal); }
+.t-feature-icon.gold { background: var(--t-badge-gold-soft); color: var(--t-badge-gold); }
+.t-feature-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--t-ink);
+}
+
+.t-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 28px;
+  padding: 17px;
+  border: none;
+  border-radius: 18px;
+  background: var(--t-orange);
+  border-bottom: 5px solid var(--t-orange-shadow);
+  color: var(--t-ink);
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  z-index: 1;
+}
+.t-cta:active { transform: translateY(4px); border-bottom-width: 0; }
+
+.t-link-row {
+  text-align: center;
+  margin-top: 18px;
+  position: relative;
+  z-index: 1;
+}
+.t-link-row a {
+  color: var(--t-ink);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.t-link-row a:hover { text-decoration: underline; }
+
+/* ---- form screens (sign up / sign in / confirm) ---- */
+
+.t-form-title {
+  font-size: 24px;
+  font-weight: 900;
+  margin: 10px 0 6px;
+  position: relative;
+  z-index: 1;
+}
+.t-form-subtitle {
+  color: var(--t-ink-soft);
+  font-size: 14px;
+  margin: 0 0 28px;
+  position: relative;
+  z-index: 1;
+}
+.t-back-btn {
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--t-ink-soft);
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.t-field {
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+.t-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--t-ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
+.t-field input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 2px solid var(--t-border);
+  background: var(--t-surface);
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--t-ink);
+}
+.t-field input:focus { outline: none; border-color: var(--t-orange); }
+
+.t-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--t-ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  margin: 22px 0;
+  position: relative;
+  z-index: 1;
+}
+.t-divider::before, .t-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--t-border);
+}
+
+.t-confirm-icon {
+  width: 96px;
+  height: 96px;
+  margin: 20px auto 24px;
+  border-radius: 50%;
+  background: var(--t-badge-gold-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
