@@ -47,8 +47,13 @@ body.theme-cream {
   pointer-events: none;
   z-index: 0;
 }
-.t-deco-heart { top: 60px; right: -30px; width: 170px; }
-.t-deco-star { bottom: 160px; left: -40px; width: 140px; }
+.t-deco-heart { top: 60px; right: -30px; width: 170px; animation: t-deco-drift 5s ease-in-out infinite; }
+.t-deco-star { bottom: 160px; left: -40px; width: 140px; animation: t-deco-drift 6s ease-in-out infinite 0.6s; }
+
+@keyframes t-deco-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+  50% { transform: translateY(-14px) rotate(6deg); opacity: 0.5; }
+}
 
 .t-topbar {
   display: flex;
@@ -76,19 +81,28 @@ body.theme-cream {
 }
 
 .t-hero {
-  margin: 28px auto 20px;
+  margin: 20px auto 12px;
   position: relative;
   z-index: 1;
   width: 200px;
+  display: flex;
+  justify-content: center;
 }
-.t-hero-card {
-  background: var(--t-surface);
-  border-radius: 24px;
-  padding: 18px;
-  box-shadow: 0 12px 30px rgba(146, 96, 14, 0.14);
-  transform: rotate(-2deg);
+.t-hero img {
+  width: 100%;
+  display: block;
+  filter: drop-shadow(0 14px 18px rgba(146, 96, 14, 0.22));
+  animation: t-wave 2.6s ease-in-out infinite;
+  transform-origin: 50% 85%;
 }
-.t-hero-card img { width: 100%; display: block; }
+
+@keyframes t-wave {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(6deg); }
+  60% { transform: rotate(-5deg); }
+  80% { transform: rotate(3deg); }
+}
 
 .t-heading {
   text-align: center;
@@ -115,7 +129,7 @@ body.theme-cream {
 
 .t-card-row {
   display: flex;
-  gap: 14px;
+  gap: 8px;
   margin-bottom: auto;
   position: relative;
   z-index: 1;
