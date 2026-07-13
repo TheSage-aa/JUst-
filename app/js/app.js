@@ -37,6 +37,10 @@ function touchStreak(state) {
   return state;
 }
 
+function mascotHTML() {
+  return `<div class="mascot"><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div></div>`;
+}
+
 let state = loadState();
 
 function render() {
@@ -49,32 +53,41 @@ function render() {
   }
 
   const nextIndex = TRACK.lessons.findIndex((_, i) => !state.completed.includes(i));
+  const welcomeBack = state.lastActiveDate === todayStr() && done > 0 && done < total;
+
   root.innerHTML = `
     <header class="hero">
+      <div class="mascot-row">
+        ${mascotHTML()}
+        <div class="speech-bubble">${welcomeBack ? "Welcome back — pick up where you left off!" : done === 0 ? "Ready when you are. Let's start with lesson 1!" : "Nice progress. Keep it going!"}</div>
+      </div>
       <p class="eyebrow">Saabi by LUMA — Phase 0</p>
       <h1>${TRACK.title}</h1>
-      <div class="stat-row">
-        <div class="stat"><span class="stat-value">${done}/${total}</span><span class="stat-label">lessons</span></div>
-        <div class="stat"><span class="stat-value">🔥 ${state.streak}</span><span class="stat-label">day streak</span></div>
+      <div class="stat-chips">
+        <div class="stat-chip streak">🔥 ${state.streak}</div>
+        <div class="stat-chip progress">⭐ ${done}/${total}</div>
       </div>
       <div class="progress-bar"><div class="progress-fill" style="width:${(done / total) * 100}%"></div></div>
-      ${state.lastActiveDate === todayStr() && done > 0 && done < total ? `<p class="return-msg">Welcome back — pick up where you left off.</p>` : ""}
     </header>
-    <ol class="lesson-list">
+    <ol class="skill-path">
       ${TRACK.lessons.map((lesson, i) => {
         const isDone = state.completed.includes(i);
+        const isCurrent = i === nextIndex;
         const isLocked = i > nextIndex;
-        const status = isDone ? "done" : isLocked ? "locked" : "unlocked";
+        const status = isDone ? "done" : isCurrent ? "current" : "locked";
+        const offset = Math.round(Math.sin(i * (Math.PI / 2)) * 78);
+        const icon = isDone ? "✓" : isLocked ? "🔒" : "★";
         return `
-          <li class="lesson-item ${status}" data-index="${i}">
-            <span class="lesson-num">${isDone ? "✓" : i + 1}</span>
-            <span class="lesson-title">${lesson.title}</span>
+          <li class="node-wrap" style="transform: translateX(${offset}px)">
+            ${isCurrent ? `<div class="start-badge">START</div>` : ""}
+            <button class="node ${status}" data-index="${i}" ${isLocked ? "disabled" : ""}>${icon}</button>
+            <div class="node-title">${lesson.title}</div>
           </li>`;
       }).join("")}
     </ol>
   `;
 
-  root.querySelectorAll(".lesson-item.unlocked, .lesson-item.done").forEach(el => {
+  root.querySelectorAll(".node.done, .node.current").forEach(el => {
     el.addEventListener("click", () => renderLesson(Number(el.dataset.index)));
   });
 }
@@ -86,9 +99,11 @@ function renderLesson(index) {
       <button class="back-btn">&larr; Back</button>
       <p class="eyebrow">Lesson ${index + 1} of ${TRACK.lessons.length}</p>
       <h2>${lesson.title}</h2>
-      <ul class="content-list">
-        ${lesson.content.map(line => `<li>${line}</li>`).join("")}
-      </ul>
+      <div class="lesson-card">
+        <ul class="content-list">
+          ${lesson.content.map(line => `<li>${line}</li>`).join("")}
+        </ul>
+      </div>
       <button class="primary-btn" id="start-quiz">Start Quiz</button>
     </div>
   `;
@@ -99,43 +114,77 @@ function renderLesson(index) {
 function renderQuiz(lessonIndex, qIndex, correctCount) {
   const lesson = TRACK.lessons[lessonIndex];
   const q = lesson.quiz[qIndex];
+  let selected = null;
+  let checked = false;
+
   root.innerHTML = `
     <div class="quiz-screen">
-      <p class="eyebrow">Question ${qIndex + 1} of ${lesson.quiz.length}</p>
-      <h2>${q.q}</h2>
+      <div class="quiz-top-row">
+        <button class="close-btn" id="quiz-close">&times;</button>
+        <div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:${(qIndex / lesson.quiz.length) * 100}%"></div></div>
+      </div>
+      <h2 class="quiz-question">${q.q}</h2>
       <div class="options">
         ${q.options.map((opt, i) => `<button class="option-btn" data-index="${i}">${opt}</button>`).join("")}
       </div>
-      <div class="feedback" id="feedback" hidden></div>
+    </div>
+    <div class="bottom-bar" id="bottom-bar">
+      <div class="bottom-bar-inner">
+        <button class="check-btn" id="check-btn" disabled>Check</button>
+      </div>
     </div>
   `;
 
-  root.querySelectorAll(".option-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const chosen = Number(btn.dataset.index);
-      const isCorrect = chosen === q.correct;
-      root.querySelectorAll(".option-btn").forEach(b => (b.disabled = true));
-      btn.classList.add(isCorrect ? "correct" : "incorrect");
-      if (!isCorrect) {
-        root.querySelector(`.option-btn[data-index="${q.correct}"]`).classList.add("correct");
-      }
-      const feedback = root.querySelector("#feedback");
-      feedback.hidden = false;
-      feedback.textContent = isCorrect ? "Correct!" : "Not quite — the right answer is highlighted above.";
-      feedback.className = "feedback " + (isCorrect ? "feedback-correct" : "feedback-incorrect");
+  root.querySelector("#quiz-close").addEventListener("click", render);
 
-      const nextBtn = document.createElement("button");
-      nextBtn.className = "primary-btn";
-      nextBtn.textContent = qIndex + 1 < lesson.quiz.length ? "Next Question" : "Finish Lesson";
-      nextBtn.addEventListener("click", () => {
-        const newCorrect = correctCount + (isCorrect ? 1 : 0);
-        if (qIndex + 1 < lesson.quiz.length) {
-          renderQuiz(lessonIndex, qIndex + 1, newCorrect);
-        } else {
-          completeLesson(lessonIndex);
-        }
-      });
-      root.querySelector(".quiz-screen").appendChild(nextBtn);
+  const optionEls = Array.from(root.querySelectorAll(".option-btn"));
+  const checkBtn = root.querySelector("#check-btn");
+  const bottomBar = root.querySelector("#bottom-bar");
+
+  optionEls.forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (checked) return;
+      selected = Number(btn.dataset.index);
+      optionEls.forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      checkBtn.disabled = false;
+    });
+  });
+
+  checkBtn.addEventListener("click", () => {
+    if (checked) {
+      const newCorrect = correctCount + (selected === q.correct ? 1 : 0);
+      if (qIndex + 1 < lesson.quiz.length) {
+        renderQuiz(lessonIndex, qIndex + 1, newCorrect);
+      } else {
+        completeLesson(lessonIndex);
+      }
+      return;
+    }
+
+    checked = true;
+    const isCorrect = selected === q.correct;
+    optionEls.forEach(b => (b.disabled = true));
+    optionEls[selected].classList.remove("selected");
+    optionEls[selected].classList.add(isCorrect ? "correct" : "incorrect");
+    if (!isCorrect) optionEls[q.correct].classList.add("correct");
+
+    bottomBar.classList.add(isCorrect ? "state-correct" : "state-incorrect");
+    bottomBar.querySelector(".bottom-bar-inner").innerHTML = `
+      <div class="feedback-row ${isCorrect ? "correct" : "incorrect"}">
+        ${isCorrect ? "🎉 Nice job!" : "❌ Not quite — the right answer is highlighted above."}
+      </div>
+      <button class="continue-btn ${isCorrect ? "" : "incorrect"}" id="continue-btn">
+        ${qIndex + 1 < lesson.quiz.length ? "Continue" : "Finish Lesson"}
+      </button>
+    `;
+    bottomBar.querySelector("#continue-btn").addEventListener("click", () => {
+      const newCorrect = correctCount + (isCorrect ? 1 : 0);
+      if (qIndex + 1 < lesson.quiz.length) {
+        renderQuiz(lessonIndex, qIndex + 1, newCorrect);
+      } else {
+        completeLesson(lessonIndex);
+      }
     });
   });
 }
@@ -152,9 +201,11 @@ function completeLesson(index) {
 function renderCompletion() {
   root.innerHTML = `
     <div class="completion-screen">
+      <div class="confetti">🎉 🎊 🎉</div>
+      <div class="completion-mascot"><div class="eye l"></div><div class="eye r"></div></div>
       <p class="eyebrow">Track complete</p>
-      <h1>You finished ${TRACK.title}! 🎉</h1>
-      <p class="stat-row-inline">🔥 ${state.streak}-day streak &middot; ${TRACK.lessons.length}/${TRACK.lessons.length} lessons</p>
+      <h1>You finished ${TRACK.title}!</h1>
+      <p class="stat-row-inline">🔥 ${state.streak}-day streak &middot; ⭐ ${TRACK.lessons.length}/${TRACK.lessons.length} lessons</p>
       <div class="cert-teaser">
         <p>A real <strong>Certified Saabi Health Advocate</strong> credential is coming in Phase 1.</p>
         <button class="primary-btn" id="cert-interest" ${state.certInterestClicked ? "disabled" : ""}>
