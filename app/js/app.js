@@ -41,6 +41,27 @@ function mascotHTML() {
   return `<div class="mascot"><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div></div>`;
 }
 
+const DECORATIONS = [
+  { cls: "deco-book", prop: "📖" },
+  { cls: "deco-heart", prop: "🩺" },
+  { cls: "deco-cheer", prop: "✨" }
+];
+
+function decorationHTML(index, side) {
+  const d = DECORATIONS[index % DECORATIONS.length];
+  const delay = (index % 4) * 0.4;
+  return `
+    <li class="deco-wrap ${side}">
+      <div class="deco ${d.cls}" style="animation-delay:${delay}s">
+        <div class="deco-mascot"><div class="eye l"></div><div class="eye r"></div></div>
+        <div class="deco-prop">${d.prop}</div>
+        <div class="deco-sparkle s1">✨</div>
+        <div class="deco-sparkle s2">✨</div>
+      </div>
+      <div class="deco-shadow"></div>
+    </li>`;
+}
+
 let state = loadState();
 
 function render() {
@@ -77,12 +98,16 @@ function render() {
         const status = isDone ? "done" : isCurrent ? "current" : "locked";
         const offset = Math.round(Math.sin(i * (Math.PI / 2)) * 78);
         const icon = isDone ? "✓" : isLocked ? "🔒" : "★";
-        return `
+        const node = `
           <li class="node-wrap" style="transform: translateX(${offset}px)">
             ${isCurrent ? `<div class="start-badge">START</div>` : ""}
             <button class="node ${status}" data-index="${i}" ${isLocked ? "disabled" : ""}>${icon}</button>
             <div class="node-title">${lesson.title}</div>
           </li>`;
+        // sprinkle a decorative character in the empty space every few lessons,
+        // on the side opposite the node so it doesn't collide with it
+        const deco = i % 3 === 1 ? decorationHTML(Math.floor(i / 3), offset >= 0 ? "left" : "right") : "";
+        return node + deco;
       }).join("")}
     </ol>
   `;
