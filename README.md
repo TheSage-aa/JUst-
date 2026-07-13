@@ -19,7 +19,9 @@ The original source document is preserved at [`assets/Saabi_by_LUMA_Complete_Pac
 
 ## Phase 0 prototype
 
-[`app/`](./app) is a working, dependency-free implementation of the Phase 0 lesson/quiz loop described in the PRD, built from the Track 1 content. Run it with:
+Live: **https://thesage-aa.github.io/JUst-/** (deploys automatically from `main` via [`.github/workflows/pages.yml`](./.github/workflows/pages.yml); requires GitHub Pages to be enabled once under repo Settings → Pages → Source → GitHub Actions).
+
+[`app/`](./app) is a working, dependency-free implementation of the Phase 0 lesson/quiz loop described in the PRD, built from the Track 1 content. Run it locally with:
 
 ```
 cd app && python3 -m http.server 8420
