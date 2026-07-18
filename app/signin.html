@@ -26,7 +26,8 @@
         <label for="password">Password</label>
         <input id="password" type="password" placeholder="Your password" required />
       </div>
-      <button type="submit" class="t-cta">
+      <p class="t-form-error" id="form-error" hidden></p>
+      <button type="submit" class="t-cta" id="submit-btn">
         Log In
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
@@ -39,11 +40,25 @@
 
   <script src="js/auth.js"></script>
   <script>
-    document.getElementById("signin-form").addEventListener("submit", (e) => {
+    const errorEl = document.getElementById("form-error");
+    const submitBtn = document.getElementById("submit-btn");
+
+    document.getElementById("signin-form").addEventListener("submit", async (e) => {
       e.preventDefault();
+      errorEl.hidden = true;
+      submitBtn.disabled = true;
+
       const email = document.getElementById("email").value.trim();
-      saveAuth({ email, signedIn: true });
-      window.location.href = "index.html";
+      const password = document.getElementById("password").value;
+
+      try {
+        await apiLogin({ email, password });
+        window.location.href = "index.html";
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.hidden = false;
+        submitBtn.disabled = false;
+      }
     });
   </script>
 </body>

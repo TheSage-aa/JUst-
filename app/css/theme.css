@@ -267,6 +267,16 @@ body.theme-cream {
 }
 .t-field input:focus { outline: none; border-color: var(--t-orange); }
 
+.t-form-error {
+  background: var(--t-red-soft);
+  color: var(--t-red);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  margin: -6px 0 16px;
+}
+
 .t-divider {
   display: flex;
   align-items: center;

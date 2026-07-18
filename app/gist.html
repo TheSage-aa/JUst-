@@ -21,33 +21,11 @@
       </div>
     </header>
 
-    <div class="gist-progress"><div class="gist-progress-fill" id="gist-progress-fill" style="width:33%"></div></div>
+    <div class="gist-progress"><div class="gist-progress-fill" id="gist-progress-fill" style="width:10%"></div></div>
 
-    <div id="chat-log">
-      <div class="chat-row">
-        <img class="chat-avatar" src="assets/characters/zara_avatar.png" alt="Zara" style="border:2px solid #e0304f;" />
-        <div class="chat-bubble">Bestie, drinking salt water does <strong>NOT</strong> cure cholera. 🤦🏾‍♀️</div>
-      </div>
-      <div class="chat-row">
-        <img class="chat-avatar" src="assets/characters/tunde_avatar.png" alt="Tunde" style="border:2px solid #3f9401;" />
-        <div class="chat-sticker">
-          <img src="assets/characters/tunde_full.png" alt="Tunde giving a thumbs up" />
-          <p class="chat-sticker-caption">Yes bro! 🙌 Facts only.</p>
-        </div>
-      </div>
-      <div class="chat-row" id="typing-row">
-        <img class="chat-avatar" src="assets/characters/buggy_avatar.png" alt="Buggy" style="border:2px solid #e8a723;" />
-        <div class="typing-bubble">
-          <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
-        </div>
-      </div>
-    </div>
+    <div id="chat-log"></div>
 
-    <div class="response-section" id="response-section">
-      <p class="response-label">Choose your response</p>
-      <button class="response-option" data-choice="aunt">But my aunt said... 👵🏾 <span>&rsaquo;</span></button>
-      <button class="response-option" data-choice="why">Wait, really? Why? 🤔 <span>&rsaquo;</span></button>
-    </div>
+    <div class="response-section" id="response-section"></div>
   </div>
 
   <nav class="bottom-nav"><div class="bottom-nav-inner">
@@ -60,49 +38,106 @@
   <script src="js/auth.js"></script>
   <script src="js/chrome.js"></script>
   <script>
+    const CHARACTERS = "assets/characters-3d/";
+    const EPISODE_ID = "gist-cholera-salt-water";
+
     const chatLog = document.getElementById("chat-log");
-    const typingRow = document.getElementById("typing-row");
     const responseSection = document.getElementById("response-section");
     const progressFill = document.getElementById("gist-progress-fill");
 
-    function addMessage(avatar, ringColor, name, html) {
+    function addRow(crewMember, node) {
       const row = document.createElement("div");
       row.className = "chat-row";
-      row.innerHTML = `
-        <img class="chat-avatar" src="assets/characters/${avatar}" alt="${name}" style="border:2px solid ${ringColor};" />
-        <div class="chat-bubble">${html}</div>
-      `;
-      chatLog.insertBefore(row, typingRow);
+      const avatarImg = crewMember ? `<img class="chat-avatar" src="${CHARACTERS}${crewMember.avatar}" alt="${crewMember.name}" style="border:2px solid ${crewMember.color};" />` : "";
+      row.innerHTML = avatarImg + node;
+      chatLog.appendChild(row);
+      return row;
     }
 
-    document.querySelectorAll(".response-option").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".response-option").forEach(b => (b.disabled = true));
-        progressFill.style.width = "66%";
+    function messageHTML(msg) {
+      if (msg.type === "sticker") {
+        return `
+          <div class="chat-sticker">
+            <img src="${CHARACTERS}${msg.img}" alt="sticker" />
+            <p class="chat-sticker-caption">${msg.caption}</p>
+          </div>`;
+      }
+      return `<div class="chat-bubble">${msg.html}</div>`;
+    }
 
-        const choice = btn.dataset.choice;
-        if (choice === "aunt") {
-          addMessage("zara_avatar.png", "#e0304f", "Zara", "I hear you — a lot of us grew up hearing that. But \"always done this way\" doesn't mean medically correct. Let's look at what actually works 👇");
-        }
+    function addTypingRow(crewMember) {
+      return addRow(crewMember, `
+        <div class="typing-bubble">
+          <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+        </div>`);
+    }
 
-        typingRow.innerHTML = `
-          <img class="chat-avatar" src="assets/characters/dr_ayo_avatar.png" alt="Dr. Ayo" style="border:2px solid #2fb0ea;" />
-          <div class="chat-bubble">Cholera causes severe dehydration fast. Salt water alone can't treat the infection — you need <strong>oral rehydration solution (ORS)</strong> and proper medical care, especially for kids. 💧</div>
-        `;
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
-        setTimeout(() => {
-          progressFill.style.width = "100%";
-          const count = parseInt(localStorage.getItem("saabi_gist_count") || "0", 10) + 1;
-          localStorage.setItem("saabi_gist_count", String(count));
-          responseSection.innerHTML = `
-            <div style="text-align:center; padding-top:8px;">
-              <p style="font-weight:900; font-size:18px; margin:0 0 6px;">🎉 You got the gist!</p>
-              <p style="color:var(--t-ink-soft); font-weight:700; margin:0 0 20px;">+10 XP</p>
-              <a href="index.html" class="t-cta" style="display:flex;">Back to Learn</a>
-            </div>`;
-        }, 900);
+    async function playMessages(crew, messages) {
+      for (const msg of messages) {
+        const speaker = crew[msg.speaker];
+        const typingRow = addTypingRow(speaker);
+        await wait(700);
+        typingRow.remove();
+        addRow(speaker, messageHTML(msg));
+      }
+    }
+
+    function renderChoices(choices, onPick) {
+      responseSection.innerHTML = `
+        <p class="response-label">Choose your response</p>
+        ${choices.map(c => `<button class="response-option" data-choice="${c.id}">${c.label} <span>&rsaquo;</span></button>`).join("")}
+      `;
+      responseSection.querySelectorAll(".response-option").forEach(btn => {
+        btn.addEventListener("click", () => {
+          responseSection.querySelectorAll(".response-option").forEach(b => (b.disabled = true));
+          onPick(btn.dataset.choice);
+        }, { once: true });
       });
-    });
+    }
+
+    async function run() {
+      const user = await requireAuth();
+      if (!user) return;
+      document.dispatchEvent(new CustomEvent("saabi:user-ready", { detail: user }));
+
+      let episode;
+      try {
+        episode = await apiCall(`/gist/episodes/${EPISODE_ID}`);
+      } catch (err) {
+        chatLog.innerHTML = `<p style="padding:20px; color:var(--t-ink-soft);">Couldn't load today's Gist — try again in a moment.</p>`;
+        return;
+      }
+
+      const { crew, script } = episode;
+      progressFill.style.width = "33%";
+      await playMessages(crew, script.intro);
+
+      renderChoices(script.choices, async (choiceId) => {
+        progressFill.style.width = "66%";
+        const followUps = (script.responses && script.responses[choiceId]) || [];
+        if (followUps.length) await playMessages(crew, followUps);
+        await playMessages(crew, [script.followUp]);
+
+        const result = await apiCall(`/gist/episodes/${EPISODE_ID}/complete`, {
+          method: "POST",
+          body: JSON.stringify({ choice: choiceId }),
+        });
+
+        progressFill.style.width = "100%";
+        responseSection.innerHTML = `
+          <div style="text-align:center; padding-top:8px;">
+            <p style="font-weight:900; font-size:18px; margin:0 0 6px;">🎉 ${script.completion?.title || "You got the gist!"}</p>
+            <p style="color:var(--t-ink-soft); font-weight:700; margin:0 0 20px;">+${result.xpEarned} XP</p>
+            <a href="index.html" class="t-cta" style="display:flex;">Back to Learn</a>
+          </div>`;
+      });
+    }
+
+    run();
   </script>
 </body>
 </html>

@@ -36,25 +36,20 @@
   <script src="js/auth.js"></script>
   <script src="js/chrome.js"></script>
   <script>
-    const progress = getProgress();
-    const trackDone = (progress.completed || []).length >= 10;
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      document.dispatchEvent(new CustomEvent("saabi:user-ready", { detail: user }));
 
-    const BADGES = [
-      { emoji: "🛡️", title: "Myth Crusher", sub: "5 Myths Debunked", color: "red", unlocked: trackDone },
-      { emoji: "🥗", title: "Nutrition Ninja", sub: "10 Healthy Recipes", color: "orange", unlocked: false },
-      { emoji: "🧘", title: "Habit Hero", sub: "7 Day Habit Loop", color: "teal", unlocked: (progress.streak || 0) >= 7 },
-      { emoji: "🧠", title: "Mental Health Ally", sub: "Coming in Phase 1", color: "purple", unlocked: false },
-      { emoji: "❤️", title: "Community Champion", sub: "Advocacy & sharing", color: "red", unlocked: false },
-      { emoji: "🩹", title: "First Aid Pro", sub: "Unlock at Lvl 15", color: "teal", unlocked: false },
-    ];
-
-    document.getElementById("achv-grid").innerHTML = BADGES.map(b => `
-      <div class="achv-card ${b.unlocked ? b.color : "locked"}">
-        <div class="achv-icon" style="font-size:24px;">${b.unlocked ? b.emoji : "🔒"}</div>
-        <p class="achv-title">${b.title}</p>
-        <p class="achv-sub">${b.sub}</p>
-      </div>
-    `).join("");
+      const badges = await apiCall("/badges");
+      document.getElementById("achv-grid").innerHTML = badges.map(b => `
+        <div class="achv-card ${b.unlocked ? b.color : "locked"}">
+          <div class="achv-icon" style="font-size:24px;">${b.unlocked ? b.emoji : "🔒"}</div>
+          <p class="achv-title">${b.title}</p>
+          <p class="achv-sub">${b.subtitle}</p>
+        </div>
+      `).join("");
+    })();
   </script>
 </body>
 </html>
