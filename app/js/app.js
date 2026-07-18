@@ -1,53 +1,8 @@
-const STORAGE_KEY = "saabi_progress_v1";
+// Learn (skill path) screen -- backed by the real Cloudflare API. Lessons and
+// completion state live in D1; nothing here touches localStorage anymore.
+
+const CHARACTERS = "assets/characters-3d/";
 const root = document.getElementById("app");
-
-function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    const parsed = JSON.parse(raw);
-    if (parsed.hearts === undefined) parsed.hearts = 3;
-    if (parsed.quizCorrect === undefined) parsed.quizCorrect = 0;
-    if (parsed.quizTotal === undefined) parsed.quizTotal = 0;
-    return parsed;
-  }
-  return {
-    completed: [],       // indexes of completed lessons
-    streak: 0,
-    lastActiveDate: null, // "YYYY-MM-DD"
-    certInterestClicked: false,
-    hearts: 3,            // visual for now -- does not yet block progress, see app/README.md
-    quizCorrect: 0,
-    quizTotal: 0
-  };
-}
-
-function saveState(state) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function daysBetween(a, b) {
-  return Math.round((new Date(b) - new Date(a)) / 86400000);
-}
-
-function touchStreak(state) {
-  const today = todayStr();
-  if (state.lastActiveDate === today) return state;
-  if (state.lastActiveDate) {
-    const gap = daysBetween(state.lastActiveDate, today);
-    state.streak = gap === 1 ? state.streak + 1 : 1;
-  } else {
-    state.streak = 1;
-  }
-  state.lastActiveDate = today;
-  state.hearts = 3; // simple daily replenish
-  return state;
-}
-
-const ASSETS = "assets/characters/";
 
 const NAV_TABS = [
   { id: "learn", href: "index.html", label: "Learn", icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5V6a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v14"/></svg>` },
@@ -63,17 +18,12 @@ function bottomNavHTML(active) {
     </div></nav>`;
 }
 
-function getUserInitial() {
-  const auth = typeof getAuth === "function" ? getAuth() : null;
-  const name = (auth && auth.name) || "Padi";
-  return name.trim().charAt(0).toUpperCase() || "P";
-}
-
-function appHeaderHTML(rightHTML) {
+function appHeaderHTML(currentUser, rightHTML) {
+  const initial = currentUser.name.trim().charAt(0).toUpperCase() || "P";
   return `
     <header class="app-header">
       <a href="profile.html" class="app-header-left">
-        <span class="app-avatar">${getUserInitial()}</span>
+        <span class="app-avatar">${initial}</span>
         <span class="app-wordmark">Saabi</span>
       </a>
       <div class="app-header-right">${rightHTML}</div>
@@ -83,9 +33,9 @@ function appHeaderHTML(rightHTML) {
 // the Crew, per the Character Bible — cycled beside the path so users start
 // to recognize who's who, the way you would in a real group chat
 const DECORATIONS = [
-  { id: "zara", name: "Zara", img: "zara_full.png" },
-  { id: "dr_ayo", name: "Dr. Ayo", img: "dr_ayo_full.png" },
-  { id: "bello", name: "Bello", img: "bello_full.png" }
+  { id: "zara", name: "Zara", img: "zara.png" },
+  { id: "dr_ayo", name: "Dr. Ayo", img: "dr_ayo.png" },
+  { id: "bello", name: "Bello", img: "bello.png" }
 ];
 
 function decorationHTML(index, side) {
@@ -94,7 +44,7 @@ function decorationHTML(index, side) {
   return `
     <li class="deco-wrap ${side}">
       <div class="deco" style="animation-delay:${delay}s">
-        <img class="deco-full-img" src="${ASSETS}${d.img}" alt="${d.name}" />
+        <img class="deco-full-img" src="${CHARACTERS}${d.img}" alt="${d.name}" />
         <div class="deco-name">${d.name}</div>
         <div class="deco-sparkle s1">✨</div>
         <div class="deco-sparkle s2">✨</div>
@@ -103,37 +53,54 @@ function decorationHTML(index, side) {
     </li>`;
 }
 
-let state = loadState();
+let user = null;
+let track = null;
+let lessons = [];
+
+async function init() {
+  user = await requireAuth();
+  if (!user) return; // requireAuth already redirected to Welcome
+
+  const tracks = await apiCall("/tracks");
+  track = tracks[0];
+  await loadLessons();
+  render();
+}
+
+async function loadLessons() {
+  const res = await apiCall(`/tracks/${track.id}/lessons`);
+  lessons = res.lessons;
+}
 
 function render() {
-  const total = TRACK.lessons.length;
-  const done = state.completed.length;
+  const total = lessons.length;
+  const done = lessons.filter(l => l.completed).length;
 
   if (done >= total) {
     renderCompletion();
     return;
   }
 
-  const nextIndex = TRACK.lessons.findIndex((_, i) => !state.completed.includes(i));
+  const nextIndex = lessons.findIndex(l => !l.completed);
   const level = done + 1;
-  const quizScore = state.quizTotal ? Math.round((state.quizCorrect / state.quizTotal) * 100) : 0;
+  const quizScore = user.stats.quizTotal ? Math.round((user.stats.quizCorrect / user.stats.quizTotal) * 100) : 0;
 
   root.innerHTML = `
     <div class="app-shell">
-      ${appHeaderHTML(`
-        <div class="app-pill streak">🔥 <span>${state.streak}</span></div>
-        <div class="app-pill hearts">❤️ <span>${state.hearts}</span></div>
+      ${appHeaderHTML(user, `
+        <div class="app-pill streak">🔥 <span>${user.stats.streak}</span></div>
+        <div class="app-pill hearts">❤️ <span>${user.stats.hearts}</span></div>
       `)}
 
       <div class="unit-banner">
-        <p class="unit-label">Unit 1</p>
-        <h2 class="unit-title">${TRACK.title}</h2>
+        <p class="unit-label">${track.unit_label || "Unit 1"}</p>
+        <h2 class="unit-title">${track.title}</h2>
         <svg class="unit-banner-deco" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 12h12M4 8v8M20 8v8M2 12h2M20 12h2"/></svg>
       </div>
 
       <ol class="skill-path">
-        ${TRACK.lessons.map((lesson, i) => {
-          const isDone = state.completed.includes(i);
+        ${lessons.map((lesson, i) => {
+          const isDone = lesson.completed;
           const isCurrent = i === nextIndex;
           const isLocked = i > nextIndex;
           const status = isDone ? "done" : isCurrent ? "current" : "locked";
@@ -180,12 +147,12 @@ function render() {
 }
 
 function renderLesson(index) {
-  const lesson = TRACK.lessons[index];
+  const lesson = lessons[index];
   root.innerHTML = `
     <div class="app-shell">
       <div class="lesson-screen">
         <button class="back-btn">&larr; Back</button>
-        <p class="eyebrow">Lesson ${index + 1} of ${TRACK.lessons.length}</p>
+        <p class="eyebrow">Lesson ${index + 1} of ${lessons.length}</p>
         <h2>${lesson.title}</h2>
         <div class="lesson-card">
           <ul class="content-list">
@@ -198,11 +165,11 @@ function renderLesson(index) {
     ${bottomNavHTML("learn")}
   `;
   root.querySelector(".back-btn").addEventListener("click", render);
-  root.querySelector("#start-quiz").addEventListener("click", () => renderQuiz(index, 0, 0));
+  root.querySelector("#start-quiz").addEventListener("click", () => renderQuiz(index, 0, 0, 0));
 }
 
-function renderQuiz(lessonIndex, qIndex, correctCount) {
-  const lesson = TRACK.lessons[lessonIndex];
+function renderQuiz(lessonIndex, qIndex, correctCount, wrongCount) {
+  const lesson = lessons[lessonIndex];
   const q = lesson.quiz[qIndex];
   let selected = null;
   let checked = false;
@@ -251,14 +218,6 @@ function renderQuiz(lessonIndex, qIndex, correctCount) {
     optionEls[selected].classList.add(isCorrect ? "correct" : "incorrect");
     if (!isCorrect) optionEls[q.correct].classList.add("correct");
 
-    state.quizTotal += 1;
-    if (isCorrect) {
-      state.quizCorrect += 1;
-    } else {
-      state.hearts = Math.max(0, state.hearts - 1);
-    }
-    saveState(state);
-
     bottomBar.classList.add(isCorrect ? "state-correct" : "state-incorrect");
     bottomBar.querySelector(".bottom-bar-inner").innerHTML = `
       <div class="feedback-row ${isCorrect ? "correct" : "incorrect"}">
@@ -270,21 +229,27 @@ function renderQuiz(lessonIndex, qIndex, correctCount) {
     `;
     bottomBar.querySelector("#continue-btn").addEventListener("click", () => {
       const newCorrect = correctCount + (isCorrect ? 1 : 0);
+      const newWrong = wrongCount + (isCorrect ? 0 : 1);
       if (qIndex + 1 < lesson.quiz.length) {
-        renderQuiz(lessonIndex, qIndex + 1, newCorrect);
+        renderQuiz(lessonIndex, qIndex + 1, newCorrect, newWrong);
       } else {
-        completeLesson(lessonIndex);
+        completeLesson(lessonIndex, newCorrect, lesson.quiz.length);
       }
     });
   });
 }
 
-function completeLesson(index) {
-  if (!state.completed.includes(index)) {
-    state.completed.push(index);
-  }
-  state = touchStreak(state);
-  saveState(state);
+async function completeLesson(index, quizCorrect, quizTotal) {
+  const lesson = lessons[index];
+  const result = await apiCall(`/lessons/${lesson.id}/complete`, {
+    method: "POST",
+    body: JSON.stringify({ quizCorrect, quizTotal }),
+  });
+  user.stats.streak = result.stats.streak;
+  user.stats.hearts = result.stats.hearts;
+  user.stats.quizCorrect = result.stats.quizCorrect;
+  user.stats.quizTotal = result.stats.quizTotal;
+  await loadLessons();
   render();
 }
 
@@ -293,14 +258,14 @@ function renderCompletion() {
     <div class="app-shell">
       <div class="completion-screen">
         <div class="confetti">🎉 🎊 🎉</div>
-        <img class="completion-mascot-img" src="${ASSETS}buggy_happy.png" alt="Buggy celebrating" />
+        <img class="completion-mascot-img" src="${CHARACTERS}buggy.png" alt="Buggy celebrating" />
         <p class="eyebrow">Track complete</p>
-        <h1>You finished ${TRACK.title}!</h1>
-        <p class="stat-row-inline">🔥 ${state.streak}-day streak &middot; ⭐ ${TRACK.lessons.length}/${TRACK.lessons.length} lessons</p>
+        <h1>You finished ${track.title}!</h1>
+        <p class="stat-row-inline">🔥 ${user.stats.streak}-day streak &middot; ⭐ ${lessons.length}/${lessons.length} lessons</p>
         <div class="cert-teaser">
           <p>A real <strong>Certified Saabi Health Advocate</strong> credential is coming in Phase 1.</p>
-          <button class="primary-btn" id="cert-interest" ${state.certInterestClicked ? "disabled" : ""}>
-            ${state.certInterestClicked ? "Thanks — you're on the list" : "Notify me when it launches"}
+          <button class="primary-btn" id="cert-interest" ${user.stats.certInterest ? "disabled" : ""}>
+            ${user.stats.certInterest ? "Thanks — you're on the list" : "Notify me when it launches"}
           </button>
         </div>
         <button class="secondary-btn" id="restart">Review track</button>
@@ -308,12 +273,12 @@ function renderCompletion() {
     </div>
     ${bottomNavHTML("learn")}
   `;
-  root.querySelector("#cert-interest").addEventListener("click", () => {
-    state.certInterestClicked = true;
-    saveState(state);
+  root.querySelector("#cert-interest").addEventListener("click", async () => {
+    await apiCertInterest();
+    user.stats.certInterest = true;
     renderCompletion();
   });
   root.querySelector("#restart").addEventListener("click", render);
 }
 
-render();
+init();

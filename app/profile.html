@@ -74,32 +74,29 @@
   <script src="js/auth.js"></script>
   <script src="js/chrome.js"></script>
   <script>
-    const progress = getProgress();
-    const done = (progress.completed || []).length;
-    const level = done + 1;
-    const xp = done * 75;
-    const xpTarget = 1000;
-    const trackDone = done >= 10;
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      document.dispatchEvent(new CustomEvent("saabi:user-ready", { detail: user }));
 
-    document.getElementById("lvl-num").textContent = level;
-    document.getElementById("xp-fill").style.width = Math.min(100, (xp / xpTarget) * 100) + "%";
-    document.getElementById("xp-label").textContent = `${xp} / ${xpTarget} XP to Level ${level + 1}`;
-    document.getElementById("gists-num").textContent = localStorage.getItem("saabi_gist_count") || "0";
+      const xp = user.lessonsCompleted * 75;
+      const xpTarget = 1000;
 
-    const BADGES = [
-      { emoji: "🛡️", title: "Myth Crusher", sub: "5 Myths Debunked", color: "red", unlocked: trackDone },
-      { emoji: "🥗", title: "Nutrition Ninja", sub: "10 Healthy Recipes", color: "orange", unlocked: false },
-      { emoji: "🧘", title: "Habit Hero", sub: "7 Day Habit Loop", color: "teal", unlocked: (progress.streak || 0) >= 7 },
-      { emoji: "🩹", title: "First Aid Pro", sub: "Unlock at Lvl 15", color: "teal", unlocked: false },
-    ];
-    document.getElementById("badges-num").textContent = BADGES.filter(b => b.unlocked).length;
-    document.getElementById("achv-grid").innerHTML = BADGES.map(b => `
-      <div class="achv-card ${b.unlocked ? b.color : "locked"}">
-        <div class="achv-icon" style="font-size:22px;">${b.unlocked ? b.emoji : "🔒"}</div>
-        <p class="achv-title">${b.title}</p>
-        <p class="achv-sub">${b.sub}</p>
-      </div>
-    `).join("");
+      document.getElementById("lvl-num").textContent = user.level;
+      document.getElementById("xp-fill").style.width = Math.min(100, (xp / xpTarget) * 100) + "%";
+      document.getElementById("xp-label").textContent = `${xp} / ${xpTarget} XP to Level ${user.level + 1}`;
+      document.getElementById("gists-num").textContent = user.stats.gistCount;
+
+      const badges = await apiCall("/badges");
+      document.getElementById("badges-num").textContent = badges.filter(b => b.unlocked).length;
+      document.getElementById("achv-grid").innerHTML = badges.slice(0, 4).map(b => `
+        <div class="achv-card ${b.unlocked ? b.color : "locked"}">
+          <div class="achv-icon" style="font-size:22px;">${b.unlocked ? b.emoji : "🔒"}</div>
+          <p class="achv-title">${b.title}</p>
+          <p class="achv-sub">${b.subtitle}</p>
+        </div>
+      `).join("");
+    })();
   </script>
 </body>
 </html>
