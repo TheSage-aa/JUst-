@@ -36,9 +36,16 @@ Cloudflare's own current guidance is to deploy static-site-plus-API projects lik
 
 Validated locally before pushing: `npx wrangler pages functions build --outdir=./_worker/` compiles cleanly, and `npx wrangler deploy --dry-run` confirms all three bindings (`DB`, `SESSIONS`, `ASSETS`) resolve correctly and reads all 24 files from `app/`.
 
+## Email delivery (Resend)
+
+`POST /api/auth/signup` now sends the verification code via [Resend](https://resend.com) (`functions/lib/email.js`), falling back to returning it directly in the response (`devVerificationCode`) only if sending fails or `RESEND_API_KEY` isn't set — `confirm.html` only shows that code on-screen when `emailSent` came back false.
+
+**To activate it**: add `RESEND_API_KEY` as an **encrypted secret** on the `saabi` Worker — Dashboard → `saabi` → Settings → Variables and Secrets → Add → type **Secret**, name `RESEND_API_KEY`. Never put this key in `wrangler.jsonc` or any committed file; secrets are dashboard/CLI-only (`wrangler secret put RESEND_API_KEY`), not part of the deployed config file.
+
+**Known limitation**: mail currently sends from Resend's shared `onboarding@resend.dev` address, which Resend only delivers to *your own* Resend account email until a custom sending domain is verified. For real signups from arbitrary users, verify a sending domain (e.g. a subdomain of `lumanigeria.org`) in Resend's dashboard (adds a few DNS records), then update the `from` address in `functions/lib/email.js` to use it.
+
 ## Known gaps before this is real "production"
 
-- **Email delivery isn't wired up.** `POST /api/auth/signup` currently returns the verification code directly in the response (`devVerificationCode`) instead of emailing it — there's no email-sending service connected yet. Needs a real provider (Cloudflare Email Workers, Resend, or a Gmail-via-Zapier send) before this can ship to real users.
 - Password hashing uses PBKDF2-SHA256 via Web Crypto (native to the Workers runtime, no dependency) — solid, but confirm 100k iterations is acceptable for your threat model before launch.
 
 ## Frontend wiring — done

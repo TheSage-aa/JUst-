@@ -46,9 +46,9 @@
       window.location.href = "signup.html";
     } else {
       document.getElementById("confirm-email").textContent = pending.email;
-      if (pending.devVerificationCode) {
+      if (pending.devVerificationCode && !pending.emailSent) {
         const hint = document.getElementById("dev-code-hint");
-        hint.textContent = `Dev mode (no email service connected yet): your code is ${pending.devVerificationCode}`;
+        hint.textContent = `Couldn't confirm email delivery, so here's your code just in case: ${pending.devVerificationCode}`;
         hint.hidden = false;
       }
     }
