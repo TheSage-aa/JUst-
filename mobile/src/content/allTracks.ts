@@ -14,6 +14,7 @@ import { TRACK1_LESSON_CONTENT, TRACK1_LESSON_SUMMARIES, TRACK1_META } from "./t
 import { TRACK2_LESSON_CONTENT, TRACK2_LESSON_SUMMARIES, TRACK2_META } from "./track2";
 import { TRACK3_LESSON_CONTENT, TRACK3_LESSON_SUMMARIES, TRACK3_META } from "./track3";
 import { TRACK4_LESSON_CONTENT, TRACK4_LESSON_SUMMARIES, TRACK4_META } from "./track4";
+import { TRACK5_LESSON_CONTENT, TRACK5_LESSON_SUMMARIES, TRACK5_META } from "./track5";
 
 export interface LessonSummary {
   id: string;
@@ -64,6 +65,11 @@ export const TRACK_CONTENT_REGISTRY: Partial<Record<TrackId, TrackRegistryEntry>
     meta: TRACK4_META,
     lessonSummaries: TRACK4_LESSON_SUMMARIES,
     lessonContent: TRACK4_LESSON_CONTENT,
+  },
+  "track-5-chronic": {
+    meta: TRACK5_META,
+    lessonSummaries: TRACK5_LESSON_SUMMARIES,
+    lessonContent: TRACK5_LESSON_CONTENT,
   },
 };
 

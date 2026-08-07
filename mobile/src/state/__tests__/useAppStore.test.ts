@@ -8,6 +8,7 @@ import { TRACK1_LESSON_SUMMARIES } from "../../content/track1";
 import { TRACK2_LESSON_SUMMARIES } from "../../content/track2";
 import { TRACK3_LESSON_SUMMARIES } from "../../content/track3";
 import { TRACK4_LESSON_SUMMARIES } from "../../content/track4";
+import { TRACK5_LESSON_SUMMARIES } from "../../content/track5";
 
 function resetStore() {
   useAppStore.setState({
@@ -130,5 +131,30 @@ describe("useAppStore -- Track 2 completion is independent of Track 1 (generaliz
     expect(badgeIds).toContain("quiet-strength");
     expect(badgeIds).toContain("clarity-seeker");
     expect(badgeIds).not.toContain("full-circle"); // needs all 5 tracks, only 4 exist
+  });
+
+  test("completing all 5 tracks unlocks every track badge AND Full Circle, sequenced with Full Circle last (Rule 32.3.2)", () => {
+    const allSummaries = [
+      ...TRACK1_LESSON_SUMMARIES,
+      ...TRACK2_LESSON_SUMMARIES,
+      ...TRACK3_LESSON_SUMMARIES,
+      ...TRACK4_LESSON_SUMMARIES,
+      ...TRACK5_LESSON_SUMMARIES,
+    ];
+    let lastOutcome;
+    for (const summary of allSummaries) {
+      useAppStore.getState().startLesson(summary.id);
+      useAppStore.getState().recordQuizAnswer(summary.id, "q1", 0, true, false);
+      lastOutcome = useAppStore.getState().completeLesson(summary.id, { isReplay: false });
+    }
+
+    const badgeIds = useAppStore.getState().economy.badgesEarned.map((b) => b.badgeId);
+    expect(badgeIds).toEqual(
+      expect.arrayContaining(["myth-crusher", "question-asker", "quiet-strength", "clarity-seeker", "nutrition-ninja", "full-circle"])
+    );
+    // The final lesson completed is Track 5's own final lesson -- its
+    // completion event should unlock both Nutrition Ninja and Full Circle
+    // together, sequenced (Nutrition Ninja first, Full Circle after).
+    expect(lastOutcome?.newlyUnlockedBadges).toEqual(["nutrition-ninja", "full-circle"]);
   });
 });
