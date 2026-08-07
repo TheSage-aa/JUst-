@@ -1,11 +1,13 @@
 import type { BadgeId } from "../types/models";
+import type { TrackId } from "../design/tokens";
 
 export type RootStackParamList = {
   Tabs: undefined;
-  TrackDetail: { trackId: string };
+  TrackDetail: { trackId: TrackId };
   LessonPlayer: { lessonId: string; isReplay: boolean };
   LessonComplete: {
     lessonId: string;
+    trackId: TrackId;
     xpAwarded: number;
     newlyUnlockedBadges: BadgeId[];
     streakAfter: number;

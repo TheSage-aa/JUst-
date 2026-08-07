@@ -5,6 +5,7 @@
  */
 import { useAppStore } from "../useAppStore";
 import { TRACK1_LESSON_SUMMARIES } from "../../content/track1";
+import { TRACK2_LESSON_SUMMARIES } from "../../content/track2";
 
 function resetStore() {
   useAppStore.setState({
@@ -64,5 +65,34 @@ describe("useAppStore -- full Track 1 completion path", () => {
     expect(replayOutcome.xpAwarded).toBe(0);
     expect(useAppStore.getState().economy.xpTotal).toBe(xpAfterFirstPass);
     expect(useAppStore.getState().economy.badgesEarned.length).toBe(badgeCountAfterFirstPass);
+  });
+});
+
+describe("useAppStore -- Track 2 completion is independent of Track 1 (generalized multi-track path)", () => {
+  beforeEach(() => resetStore());
+
+  test("completing only Track 2 unlocks Question Asker, not Myth Crusher", () => {
+    for (const summary of TRACK2_LESSON_SUMMARIES) {
+      useAppStore.getState().startLesson(summary.id);
+      useAppStore.getState().recordQuizAnswer(summary.id, "q1", 0, true, false);
+      useAppStore.getState().completeLesson(summary.id, { isReplay: false });
+    }
+
+    const badgeIds = useAppStore.getState().economy.badgesEarned.map((b) => b.badgeId);
+    expect(badgeIds).toContain("question-asker");
+    expect(badgeIds).not.toContain("myth-crusher");
+  });
+
+  test("completing both Track 1 and Track 2 unlocks both badges but not Full Circle", () => {
+    for (const summary of [...TRACK1_LESSON_SUMMARIES, ...TRACK2_LESSON_SUMMARIES]) {
+      useAppStore.getState().startLesson(summary.id);
+      useAppStore.getState().recordQuizAnswer(summary.id, "q1", 0, true, false);
+      useAppStore.getState().completeLesson(summary.id, { isReplay: false });
+    }
+
+    const badgeIds = useAppStore.getState().economy.badgesEarned.map((b) => b.badgeId);
+    expect(badgeIds).toContain("myth-crusher");
+    expect(badgeIds).toContain("question-asker");
+    expect(badgeIds).not.toContain("full-circle"); // needs all 5 tracks, only 2 exist
   });
 });

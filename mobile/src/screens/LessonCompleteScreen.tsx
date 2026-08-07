@@ -37,8 +37,8 @@ const BADGE_LABEL: Record<string, string> = {
 export function LessonCompleteScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "LessonComplete">>();
-  const { xpAwarded, newlyUnlockedBadges, streakAfter, isReplay } = route.params;
-  const accent = trackAccent["track-1-hiv-stigma"];
+  const { trackId, xpAwarded, newlyUnlockedBadges, streakAfter, isReplay } = route.params;
+  const accent = trackAccent[trackId as keyof typeof trackAccent] ?? trackAccent["track-1-hiv-stigma"];
   const expressCertificationInterest = useAppStore((s) => s.expressCertificationInterest);
   const hasExpressedCertificationInterest = useAppStore((s) => s.hasExpressedCertificationInterest);
 
@@ -74,11 +74,11 @@ export function LessonCompleteScreen() {
       {trackJustCompleted ? (
         <TouchableOpacity
           style={styles.certButton}
-          disabled={hasExpressedCertificationInterest("track-1-hiv-stigma")}
-          onPress={() => expressCertificationInterest("track-1-hiv-stigma")}
+          disabled={hasExpressedCertificationInterest(trackId)}
+          onPress={() => expressCertificationInterest(trackId)}
         >
           <Text style={styles.certButtonText}>
-            {hasExpressedCertificationInterest("track-1-hiv-stigma")
+            {hasExpressedCertificationInterest(trackId)
               ? "Thanks — we'll let you know."
               : "Want us to let you know if/when a real certification becomes available?"}
           </Text>

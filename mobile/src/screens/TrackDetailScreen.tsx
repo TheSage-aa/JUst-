@@ -9,7 +9,8 @@ import { useNavigation, useRoute, type RouteProp } from "@react-navigation/nativ
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { color, radius, space, trackAccent } from "../design/tokens";
 import { useAppStore } from "../state/useAppStore";
-import { TRACK1_LESSON_CONTENT, TRACK1_LESSON_SUMMARIES, TRACK1_META } from "../content/track1";
+import { ALL_TRACK_META, TRACK_CONTENT_REGISTRY } from "../content/allTracks";
+import { CHARACTERS } from "../characters/characters";
 import type { RootStackParamList } from "../navigation/types";
 
 type NodeState = "locked" | "current" | "completed";
@@ -18,24 +19,28 @@ export function TrackDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "TrackDetail">>();
   const progressByLessonId = useAppStore((s) => s.progressByLessonId);
-  const accent = trackAccent[route.params.trackId as keyof typeof trackAccent] ?? trackAccent["track-1-hiv-stigma"];
+  const trackId = route.params.trackId;
+  const accent = trackAccent[trackId];
+  const entry = TRACK_CONTENT_REGISTRY[trackId];
+  const hostName = CHARACTERS[ALL_TRACK_META[trackId].hostCharacterId].name;
+  const lessonSummaries = entry?.lessonSummaries ?? [];
 
-  const firstIncompleteIndex = TRACK1_LESSON_SUMMARIES.findIndex(
+  const firstIncompleteIndex = lessonSummaries.findIndex(
     (l) => progressByLessonId[l.id]?.status !== "completed"
   );
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ padding: space.lg, gap: space.md }}>
       <View style={[styles.introBlock, { backgroundColor: accent }]}>
-        <Text style={styles.introHost}>Hosted by Zara</Text>
-        <Text style={styles.introTitle}>{TRACK1_META.title}</Text>
+        <Text style={styles.introHost}>Hosted by {hostName}</Text>
+        <Text style={styles.introTitle}>{ALL_TRACK_META[trackId].title}</Text>
       </View>
 
-      {TRACK1_LESSON_SUMMARIES.map((lesson, index) => {
+      {lessonSummaries.map((lesson, index) => {
         const isCompleted = progressByLessonId[lesson.id]?.status === "completed";
         const isCurrent = !isCompleted && index === firstIncompleteIndex;
         const state: NodeState = isCompleted ? "completed" : isCurrent ? "current" : "locked";
-        const hasContent = Boolean(TRACK1_LESSON_CONTENT[lesson.id]);
+        const hasContent = Boolean(entry?.lessonContent[lesson.id]);
 
         return (
           <LessonNode

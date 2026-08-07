@@ -18,7 +18,7 @@ import {
   type StreakRolloverEvent,
 } from "../economy/economy";
 import type { BadgeId, Economy, Progress, QuizAnswerRecord, User } from "../types/models";
-import { TRACK1_LESSON_CONTENT, TRACK1_META } from "../content/track1";
+import { findLessonById, isTrackComplete } from "../content/allTracks";
 import { zustandMmkvStorage } from "./storage";
 
 function freshUser(): User {
@@ -83,13 +83,6 @@ interface AppState {
   dismissStreakRiskBannerForToday: () => void;
   setSoundEnabled: (enabled: boolean) => void;
   setHapticsEnabled: (enabled: boolean) => void;
-}
-
-function isTrack1Complete(progressByLessonId: Record<string, Progress>): boolean {
-  const ids = Object.keys(TRACK1_LESSON_CONTENT).length === 10
-    ? Object.keys(TRACK1_LESSON_CONTENT)
-    : Array.from({ length: TRACK1_META.totalLessons }, (_, i) => `track-1-lesson-${i + 1}`);
-  return ids.every((id) => progressByLessonId[id]?.status === "completed");
 }
 
 export const useAppStore = create<AppState>()(
@@ -174,13 +167,12 @@ export const useAppStore = create<AppState>()(
         const now = new Date();
         const today = getLocalDateString(now);
 
-        const lessonNumber = TRACK1_LESSON_CONTENT[lessonId]?.lessonNumber ?? 0;
-        const isMixedReviewLesson = lessonNumber === 10;
+        const found = findLessonById(lessonId);
+        const isMixedReviewLesson = found?.lesson.lessonNumber === 10;
         const totalQuestions = existing?.quizAnswers.length ?? 0;
         const correctCount = existing?.quizAnswers.filter((a) => a.wasCorrect).length ?? 0;
         const isPerfectFirstAttempt = isFirstCompletion && totalQuestions > 0 && correctCount === totalQuestions;
 
-        // Will this completion finish the whole track (all 10) for the first time?
         const progressAfterThis: Record<string, Progress> = {
           ...state.progressByLessonId,
           [lessonId]: {
@@ -190,7 +182,8 @@ export const useAppStore = create<AppState>()(
             lastReplayedAt: opts.isReplay ? now.toISOString() : existing?.lastReplayedAt ?? null,
           },
         };
-        const trackJustCompleted = isFirstCompletion && isTrack1Complete(progressAfterThis);
+        const trackJustCompleted =
+          isFirstCompletion && found !== null && isTrackComplete(found.trackId, progressAfterThis);
 
         const { economy: economyAfterXp, xpAwarded } = applyLessonCompletionXP(state.economy, {
           isFirstCompletion,
@@ -204,13 +197,16 @@ export const useAppStore = create<AppState>()(
           ? incrementStreakOnCompletion(economyAfterXp, today)
           : economyAfterXp;
 
+        // Evaluate every authored track's completion state generically --
+        // not just the one the just-completed lesson belongs to, since a
+        // future lesson could complete a track other than the "current" one.
         const { economy: economyAfterBadges, newlyUnlocked } = evaluateBadgeUnlocks(economyAfterStreak, {
           trackComplete: {
-            "track-1-hiv-stigma": trackJustCompleted || isTrack1Complete(progressAfterThis),
-            "track-2-srh": false,
-            "track-3-mental-health": false,
-            "track-4-stis": false,
-            "track-5-chronic": false,
+            "track-1-hiv-stigma": isTrackComplete("track-1-hiv-stigma", progressAfterThis),
+            "track-2-srh": isTrackComplete("track-2-srh", progressAfterThis),
+            "track-3-mental-health": isTrackComplete("track-3-mental-health", progressAfterThis),
+            "track-4-stis": isTrackComplete("track-4-stis", progressAfterThis),
+            "track-5-chronic": isTrackComplete("track-5-chronic", progressAfterThis),
           },
           now,
         });

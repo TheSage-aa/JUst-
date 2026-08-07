@@ -1,27 +1,23 @@
 /**
- * Home (Track Map) -- Ch.13. Only Track 1 has authored content this pass
- * (Ch.68 step 3's scope); the other four track cards render honestly as
- * "Coming soon" rather than fake-navigable, per the same no-fabricated-
- * content principle applied throughout this build.
+ * Home (Track Map) -- Ch.13. Tracks with authored content (currently
+ * Track 1 and Track 2) are playable; the rest render honestly as "Coming
+ * soon" rather than fake-navigable, per the same no-fabricated-content
+ * principle applied throughout this build. Driven by the cross-track
+ * registry (src/content/allTracks.ts) so a newly authored track becomes
+ * playable here automatically, with no per-screen hardcoding.
  */
 import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { color, radius, space, trackAccent, type TrackId } from "../design/tokens";
+import { color, radius, space, trackAccent } from "../design/tokens";
 import { BuggyLine, BuggyMascot } from "../components/BuggyMascot";
 import { useAppStore } from "../state/useAppStore";
 import { getLocalDateString, type StreakRolloverEvent } from "../economy/economy";
 import { getHomeGreeting } from "../content/buggyGreetings";
-import { TRACK1_LESSON_SUMMARIES, TRACK1_META } from "../content/track1";
+import { ALL_TRACK_IDS, ALL_TRACK_META, TRACK_CONTENT_REGISTRY } from "../content/allTracks";
+import { CHARACTERS } from "../characters/characters";
 import type { RootStackParamList } from "../navigation/types";
-
-const OTHER_TRACKS: Array<{ id: TrackId; title: string; host: string }> = [
-  { id: "track-2-srh", title: "Sexual & Reproductive Health", host: "Kemi" },
-  { id: "track-3-mental-health", title: "Mental Health", host: "Nana" },
-  { id: "track-4-stis", title: "STIs Beyond HIV", host: "Dr. Ayo" },
-  { id: "track-5-chronic", title: "Chronic Conditions", host: "Tunde" },
-];
 
 export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -31,16 +27,33 @@ export function HomeScreen() {
   const acknowledgeStreakEvent = useAppStore((s) => s.acknowledgeStreakEvent);
 
   const today = getLocalDateString(new Date());
-  const completedCount = TRACK1_LESSON_SUMMARIES.filter(
-    (l) => progressByLessonId[l.id]?.status === "completed"
-  ).length;
-  const hasAnyCompletedLesson = completedCount > 0;
+
+  const tracks = ALL_TRACK_IDS.map((id) => {
+    const entry = TRACK_CONTENT_REGISTRY[id];
+    const completedCount = entry
+      ? entry.lessonSummaries.filter((l) => progressByLessonId[l.id]?.status === "completed").length
+      : 0;
+    const total = entry?.meta.totalLessons ?? 10;
+    return {
+      id,
+      title: ALL_TRACK_META[id].title,
+      hostName: CHARACTERS[ALL_TRACK_META[id].hostCharacterId].name,
+      playable: Boolean(entry),
+      completedCount,
+      total,
+    };
+  });
+
+  const hasAnyCompletedLesson = tracks.some((t) => t.completedCount > 0);
   const greeting = useMemo(
     () => getHomeGreeting(economy, today, hasAnyCompletedLesson),
     [economy, today, hasAnyCompletedLesson]
   );
 
-  const progressFraction = completedCount / TRACK1_META.totalLessons;
+  // "Continue" highlights the first playable, not-yet-fully-complete track,
+  // in track order -- naturally stays on Track 1 until it's done, then
+  // moves on, without needing separate "current track" state to maintain.
+  const continueTrack = tracks.find((t) => t.playable && t.completedCount < t.total) ?? tracks.find((t) => t.playable);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ padding: space.lg, gap: space.lg }}>
@@ -65,41 +78,45 @@ export function HomeScreen() {
         />
       ) : null}
 
-      <TouchableOpacity
-        style={[styles.continueCard, { backgroundColor: trackAccent["track-1-hiv-stigma"] }]}
-        onPress={() => navigation.navigate("TrackDetail", { trackId: "track-1-hiv-stigma" })}
-        accessibilityRole="button"
-      >
-        <Text style={styles.continueCardLabel}>{completedCount > 0 ? "Continue" : "New here? Start with something small."}</Text>
-        <Text style={styles.continueCardTitle}>{TRACK1_META.title}</Text>
-        <Text style={styles.continueCardSub}>
-          {completedCount}/{TRACK1_META.totalLessons} lessons · hosted by Zara
-        </Text>
-      </TouchableOpacity>
+      {continueTrack ? (
+        <TouchableOpacity
+          style={[styles.continueCard, { backgroundColor: trackAccent[continueTrack.id] }]}
+          onPress={() => navigation.navigate("TrackDetail", { trackId: continueTrack.id })}
+          accessibilityRole="button"
+        >
+          <Text style={styles.continueCardLabel}>
+            {continueTrack.completedCount > 0 ? "Continue" : "New here? Start with something small."}
+          </Text>
+          <Text style={styles.continueCardTitle}>{continueTrack.title}</Text>
+          <Text style={styles.continueCardSub}>
+            {continueTrack.completedCount}/{continueTrack.total} lessons · hosted by {continueTrack.hostName}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
 
       <View>
         <Text style={styles.sectionTitle}>Your tracks</Text>
-        <TouchableOpacity
-          style={[styles.trackCard, { borderColor: trackAccent["track-1-hiv-stigma"] }]}
-          onPress={() => navigation.navigate("TrackDetail", { trackId: "track-1-hiv-stigma" })}
-        >
-          <View style={[styles.trackDot, { backgroundColor: trackAccent["track-1-hiv-stigma"] }]} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.trackCardTitle}>{TRACK1_META.title}</Text>
-            <Text style={styles.trackCardSub}>
-              {progressFraction >= 1 ? "Completed" : progressFraction > 0 ? `${completedCount}/${TRACK1_META.totalLessons} lessons` : "Start"}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {OTHER_TRACKS.map((t) => (
-          <View key={t.id} style={[styles.trackCard, styles.trackCardDisabled, { borderColor: trackAccent[t.id] }]}>
+        {tracks.map((t) => (
+          <TouchableOpacity
+            key={t.id}
+            disabled={!t.playable}
+            style={[styles.trackCard, !t.playable && styles.trackCardDisabled, { borderColor: trackAccent[t.id] }]}
+            onPress={() => navigation.navigate("TrackDetail", { trackId: t.id })}
+          >
             <View style={[styles.trackDot, { backgroundColor: trackAccent[t.id] }]} />
             <View style={{ flex: 1 }}>
               <Text style={styles.trackCardTitle}>{t.title}</Text>
-              <Text style={styles.trackCardSub}>Coming soon · hosted by {t.host}</Text>
+              <Text style={styles.trackCardSub}>
+                {!t.playable
+                  ? `Coming soon · hosted by ${t.hostName}`
+                  : t.completedCount >= t.total
+                  ? "Completed"
+                  : t.completedCount > 0
+                  ? `${t.completedCount}/${t.total} lessons`
+                  : "Start"}
+              </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     </ScrollView>

@@ -6,13 +6,13 @@
  *
  * SCOPE NOTE (flagged per Ch.67 SS67.3): Ch.30 SS30.5's "Practice Mode"
  * (unlimited-attempts review content drawn from other completed lessons)
- * is not implemented this pass -- there is only one authored lesson in the
- * whole app right now, so there is no other completed content to draw a
- * practice set from yet. The zero-hearts *pause* and the *wait-for-
- * regeneration* path (with a real live countdown against
- * heartsLastRegenAt) are fully implemented and functional; only the
- * alternate Practice Mode path is stubbed as an honest "coming soon"
- * message rather than fake unlimited-attempts content.
+ * is not implemented this pass -- there isn't yet a broad enough library
+ * of completed content across tracks to draw a meaningful practice set
+ * from. The zero-hearts *pause* and the *wait-for-regeneration* path
+ * (with a real live countdown against heartsLastRegenAt) are fully
+ * implemented and functional; only the alternate Practice Mode path is
+ * stubbed as an honest "coming soon" message rather than fake
+ * unlimited-attempts content.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -21,7 +21,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { color, radius, space, trackAccent } from "../design/tokens";
 import { BuggyLine } from "../components/BuggyMascot";
 import { CHARACTERS } from "../characters/characters";
-import { TRACK1_LESSON_CONTENT } from "../content/track1";
+import { findLessonById } from "../content/allTracks";
 import { useAppStore } from "../state/useAppStore";
 import { HEARTS_CAP } from "../economy/economy";
 import type { Beat, QuizQuestion } from "../types/content";
@@ -36,8 +36,9 @@ export function LessonPlayerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "LessonPlayer">>();
   const { lessonId, isReplay } = route.params;
-  const lesson = TRACK1_LESSON_CONTENT[lessonId];
-  const accent = trackAccent["track-1-hiv-stigma"];
+  const found = findLessonById(lessonId);
+  const lesson = found?.lesson;
+  const accent = trackAccent[found?.trackId ?? "track-1-hiv-stigma"];
 
   const startLesson = useAppStore((s) => s.startLesson);
   const recordQuizAnswer = useAppStore((s) => s.recordQuizAnswer);
@@ -131,6 +132,7 @@ export function LessonPlayerScreen() {
     const result = completeLesson(lessonId, { isReplay });
     navigation.replace("LessonComplete", {
       lessonId,
+      trackId: found?.trackId ?? "track-1-hiv-stigma",
       xpAwarded: result.xpAwarded,
       newlyUnlockedBadges: result.newlyUnlockedBadges,
       streakAfter: result.streakAfter,
