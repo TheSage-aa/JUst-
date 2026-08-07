@@ -3,6 +3,10 @@ import type { TrackId } from "../design/tokens";
 import type { CharacterId } from "../characters/characters";
 
 export type RootStackParamList = {
+  Splash: undefined;
+  Onboarding: undefined;
+  SignUp: undefined;
+  LogIn: undefined;
   Tabs: undefined;
   TrackDetail: { trackId: TrackId };
   LessonPlayer: { lessonId: string; isReplay: boolean };

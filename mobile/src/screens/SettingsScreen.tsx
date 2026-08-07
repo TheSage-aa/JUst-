@@ -3,13 +3,11 @@
  * (non-guilt copy, Rule 33.2.1), and an Account section (email, log out,
  * delete account with full-purge language per Ch.1 SS1.7).
  *
- * Log Out is left honestly non-functional: this build has no real
- * auth/account system yet (Book VIII, not this pass -- see the same gap
- * flagged in useAppStore's freshUser()), so pretending a tap "signs you
- * out" would be fabricating a feature. The button is present (per Ch.19's
- * screen inventory) and tapping it says so plainly rather than lying.
- * Delete Account, by contrast, IS fully wired -- it doesn't need a backend
- * to be real, since all data lives on-device already.
+ * Log Out now genuinely signs out (Ch.12 SS12.3's local-only account
+ * model, see useAppStore's signOut()) -- it returns to Log In without
+ * touching progress/economy data, so logging back in with the same email
+ * resumes exactly where the user left off. Delete Account is the
+ * separate, permanent, full-purge action.
  */
 import React from "react";
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
@@ -33,12 +31,13 @@ export function SettingsScreen() {
   const setHapticsEnabled = useAppStore((s) => s.setHapticsEnabled);
   const setReminderTime = useAppStore((s) => s.setReminderTime);
   const deleteAccount = useAppStore((s) => s.deleteAccount);
+  const signOut = useAppStore((s) => s.signOut);
 
   const handleLogOut = () => {
-    Alert.alert(
-      "Not set up yet",
-      "This build doesn't have accounts wired up yet, so there's nothing to log out of -- everything lives on this device only."
-    );
+    Alert.alert("Log out?", "Your progress stays saved on this device — log back in with the same email anytime.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Log out", style: "destructive", onPress: () => signOut() },
+    ]);
   };
 
   const handleDeleteAccount = () => {

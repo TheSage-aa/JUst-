@@ -1,4 +1,4 @@
-# Saabi (mobile) — all 5 tracks complete, core loop + progress/settings screens done
+# Saabi (mobile) — all 5 tracks, full core loop, and Splash/Onboarding/Sign-up complete
 
 React Native / Expo / TypeScript. Built against `docs/bible/SAABI_BIBLE.md`,
 following its Book X Ch.68 build sequence. **All 5 tracks are fully authored
@@ -26,14 +26,15 @@ development.
 ## Verify it
 
 ```
-npm test          # 536 tests: full Ch.62 QA-ECON-01..16 economy suite,
+npm test          # 547 tests: full Ch.62 QA-ECON-01..16 economy suite,
                    # Ch.39 SS39.3 content-schema validation + Book I
                    # compliance checks across all 50 authored lessons
-                   # (all 5 tracks), and end-to-end store integration
-                   # tests proving every track's completion path works
+                   # (all 5 tracks), end-to-end store integration tests
+                   # proving every track's completion path works
                    # independently (each unlocks its own badge; completing
                    # all 5 unlocks Full Circle last, sequenced per Rule
-                   # 32.3.2).
+                   # 32.3.2), and the Ch.12 SS12.3 sign-up/log-in/log-out
+                   # local-account action tests.
 npx tsc --noEmit   # zero errors
 ```
 
@@ -133,6 +134,24 @@ guard).
   so `fireSoundEvent()` only fires the haptic; see the file's trailing
   comment for the rest of Book VII that isn't wired (actual sound
   playback, celebration jingles, character sound signatures).
+- **Splash, Onboarding, Sign Up / Log In (Ch.12)** — a real dark-plum
+  Splash with Buggy's idle loop and the 800ms hard minimum; a 3-slide
+  skippable Onboarding (slide 3, "social proof," is deliberately omitted
+  per Ch.12.2's own instruction not to ship placeholder statistics); Sign
+  Up and Log In with the exact required field set and validation/error
+  states. This build has no backend (Book VIII), so these manage one real
+  local device profile rather than a server account: Sign Up creates it,
+  Log In re-enters it by matching email, and Settings' **Log Out** now
+  genuinely ends the session (previously an honest stub) without
+  touching progress/economy data, so logging back in with the same email
+  resumes exactly where you left off. The password field is real for
+  validation but is deliberately never persisted anywhere, since there's
+  no secure credential storage in this build — see `useAppStore.ts`'s
+  `signUp`/`logIn` comments. Covered by 11 dedicated store-action tests
+  rather than through the Alert-gated UI flows, since react-native-web's
+  `Alert.alert` doesn't support multi-button callbacks (a platform
+  limitation of the web-target verification method used in this sandbox,
+  not an app bug — these are real native modals on iOS/Android).
 
 ## What's explicitly not built yet (later Ch.68 steps)
 
@@ -153,10 +172,10 @@ guard).
   comment.
 - The offline/sync layer's *server* half and the full QA suite beyond the
   economy/content tests above (Book VIII/IX) — step 8. Local persistence
-  works; there's no backend to sync against yet.
-- Auth / Sign Up / Log In (Ch.12 SS12.3) — the app currently runs as a
-  single on-device local user with no account system, which is also why
-  Settings' Log Out is an honest no-op rather than a real sign-out.
+  works; there's no backend to sync against yet. Sign Up/Log In (above)
+  are real for a single local device profile, but there's still no real
+  server-side account, password hashing, or multi-device sync — that's
+  this same Book VIII gap, not a separate one.
 - Practice Mode (Ch.30 SS30.5) — the zero-hearts pause and wait-for-
   regeneration path are fully functional; Practice Mode's alternate path
   remains an honest "coming soon" placeholder.

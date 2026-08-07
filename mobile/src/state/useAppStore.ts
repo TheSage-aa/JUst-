@@ -24,13 +24,20 @@ import { mmkv, zustandMmkvStorage } from "./storage";
 
 function freshUser(): User {
   return {
-    userId: "local-user", // Phase 1 vertical slice: single on-device user, no auth wired yet (Ch.12 SS12.3 is the next screen this build order reaches, not this pass -- see Ch.68 step 2/3 sequencing).
+    // Phase 1: a single on-device profile, no real backend account system
+    // (Book VIII not built) -- signUp()/logIn() below manage this one
+    // local profile's email/session state rather than talking to a
+    // server, per Ch.12 SS12.3's fields but honestly scoped to what a
+    // local-only app can actually do (see those actions' own comments).
+    userId: "local-user",
     email: "",
     createdAt: new Date().toISOString(),
     soundEnabled: true,
     hapticsEnabled: true,
   };
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function freshEconomy(userId: string): Economy {
   const now = new Date().toISOString();
@@ -73,6 +80,14 @@ interface AppState {
    * required distinct acknowledgment (Ch.31 SS31.4) on next open. Cleared
    * once shown -- this must fire exactly once per event, not persist. */
   pendingStreakEvent: StreakRolloverEvent;
+  /** Ch.12 SS12.2: onboarding shown once, ever, on this device. */
+  hasSeenOnboarding: boolean;
+  /** Ch.12 SS12.3 / Ch.19 SS19.2: whether the local profile is currently
+   * "logged in." Distinct from whether a profile exists at all (`user.
+   * email !== ""`) -- signOut() clears this without touching progress/
+   * economy data, so logging back in with the same email picks up
+   * exactly where the user left off, same as any real session model. */
+  sessionActive: boolean;
 
   hydrate: () => void;
   acknowledgeStreakEvent: () => void;
@@ -94,6 +109,22 @@ interface AppState {
    * copy of this data anywhere, so wiping it here is a genuine full purge,
    * not a partial local reset with a server-side copy left behind. */
   deleteAccount: () => void;
+
+  completeOnboarding: () => void;
+  /** Ch.12 SS12.3. This device supports exactly one local profile (Book
+   * VIII's real multi-account backend isn't built) -- signing up creates
+   * or re-enters that one profile. The password field exists for UI/
+   * validation fidelity to the spec's field list but is deliberately
+   * never persisted anywhere: there's no secure credential storage or
+   * hashing in this build (Book VIII SS55.1), so storing it would be a
+   * real security anti-pattern, not a shortcut worth taking even locally. */
+  signUp: (input: { email: string; password: string; displayName?: string; age?: number }) => { ok: boolean; error?: string };
+  logIn: (input: { email: string; password: string }) => { ok: boolean; error?: string };
+  /** Ch.19 SS19.2. Ends the session without touching progress/economy
+   * data -- logging back in with the same email resumes exactly where
+   * the user left off. (Distinct from deleteAccount(), which purges
+   * everything.) */
+  signOut: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -105,6 +136,8 @@ export const useAppStore = create<AppState>()(
       certificationInterestByTrackId: {},
       streakRiskBannerShownDate: null,
       pendingStreakEvent: "none",
+      hasSeenOnboarding: false,
+      sessionActive: false,
 
       hydrate: () => {
         // Runs the once-per-day rollover (Rule 31.3.2) and heart
@@ -289,8 +322,52 @@ export const useAppStore = create<AppState>()(
           certificationInterestByTrackId: {},
           streakRiskBannerShownDate: null,
           pendingStreakEvent: "none",
+          hasSeenOnboarding: false,
+          sessionActive: false,
         });
       },
+
+      completeOnboarding: () => set({ hasSeenOnboarding: true }),
+
+      signUp: ({ email, password, displayName, age }) => {
+        if (!EMAIL_RE.test(email)) return { ok: false, error: "That email address doesn't look right." };
+        if (password.length < 6) return { ok: false, error: "Password needs to be at least 6 characters." };
+
+        const state = get();
+        if (state.user.email && state.user.email !== email) {
+          return { ok: false, error: "This device already has an account signed in. Log out first, or log in with that email." };
+        }
+        if (state.user.email === email) {
+          return { ok: false, error: "An account with this email already exists on this device — log in instead." };
+        }
+
+        set((s) => ({
+          user: { ...s.user, email, displayName: displayName || undefined, age },
+          sessionActive: true,
+        }));
+        return { ok: true };
+      },
+
+      logIn: ({ email, password }) => {
+        if (!EMAIL_RE.test(email)) return { ok: false, error: "That email address doesn't look right." };
+        if (password.length < 1) return { ok: false, error: "Enter your password." };
+
+        const state = get();
+        if (!state.user.email) {
+          return { ok: false, error: "No account found on this device yet — sign up first." };
+        }
+        if (state.user.email !== email) {
+          return { ok: false, error: "No account found with that email on this device." };
+        }
+        // Phase 1 note (Book VIII SS55.1 gap, flagged): password isn't
+        // actually verified against anything stored, since nothing is
+        // stored -- see signUp()'s comment. The email match is the whole
+        // check this local-only build can honestly perform.
+        set({ sessionActive: true });
+        return { ok: true };
+      },
+
+      signOut: () => set({ sessionActive: false }),
     }),
     {
       name: "saabi-app-state-v1",
