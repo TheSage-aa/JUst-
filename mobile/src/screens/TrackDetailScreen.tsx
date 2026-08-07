@@ -11,6 +11,8 @@ import { color, radius, space, trackAccent } from "../design/tokens";
 import { useAppStore } from "../state/useAppStore";
 import { ALL_TRACK_META, TRACK_CONTENT_REGISTRY } from "../content/allTracks";
 import { CHARACTERS } from "../characters/characters";
+import { buildShakeAnimation, getShakeStyle } from "../utils/gentleShake";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import type { RootStackParamList } from "../navigation/types";
 
 type NodeState = "locked" | "current" | "completed";
@@ -87,17 +89,17 @@ function LessonNode({
   onPress: () => void;
   disabledReason: string | null;
 }) {
+  const reducedMotion = useReducedMotion();
   const shake = useRef(new Animated.Value(0)).current;
   const [showHint, setShowHint] = React.useState(false);
 
   const handlePress = () => {
     if (disabledReason) {
       setShowHint(true);
-      Animated.sequence([
-        Animated.timing(shake, { toValue: 1, duration: 60, useNativeDriver: true }),
-        Animated.timing(shake, { toValue: -1, duration: 60, useNativeDriver: true }),
-        Animated.timing(shake, { toValue: 0, duration: 60, useNativeDriver: true }),
-      ]).start(() => setTimeout(() => setShowHint(false), 1800));
+      // Ch.45.3: locked-node rejection reuses the same Gentle-Shake
+      // "not yet" gesture as an incorrect quiz answer (Ch.42.3), exact
+      // values from Book VI (Ch.68 step 6).
+      buildShakeAnimation(shake, reducedMotion).start(() => setTimeout(() => setShowHint(false), 1800));
       return;
     }
     onPress();
@@ -108,7 +110,7 @@ function LessonNode({
 
   return (
     <View style={{ marginLeft: offset }}>
-      <Animated.View style={{ transform: [{ translateX: shake.interpolate({ inputRange: [-1, 1], outputRange: [-6, 6] }) }] }}>
+      <Animated.View style={getShakeStyle(shake, reducedMotion)}>
         <TouchableOpacity
           style={[styles.node, { backgroundColor, borderColor }]}
           onPress={handlePress}

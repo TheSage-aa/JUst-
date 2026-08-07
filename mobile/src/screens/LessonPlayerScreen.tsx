@@ -14,8 +14,8 @@
  * stubbed as an honest "coming soon" message rather than fake
  * unlimited-attempts content.
  */
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, Animated, Easing, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { color, radius, space, trackAccent } from "../design/tokens";
@@ -24,11 +24,20 @@ import { CHARACTERS } from "../characters/characters";
 import { findLessonById } from "../content/allTracks";
 import { useAppStore } from "../state/useAppStore";
 import { HEARTS_CAP } from "../economy/economy";
+import { TIMING } from "../design/motion";
+import { buildShakeAnimation, getShakeStyle } from "../utils/gentleShake";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import type { Beat, QuizQuestion } from "../types/content";
 import type { RootStackParamList } from "../navigation/types";
 
-const TYPING_DELAY_MS = 700; // approximation pending Book VI's exact timing (Ch.68 step 6)
-const CORRECT_AUTO_ADVANCE_MS = 1100;
+// Ch.41.2's global timing table (Book VI, Ch.68 step 6): typing indicator
+// duration is randomized within a range per bubble, deliberately, so the
+// reveal rhythm doesn't feel mechanical/identical every time.
+function randomTypingDelayMs(): number {
+  return TIMING.typingIndicatorMinMs + Math.random() * (TIMING.typingIndicatorMaxMs - TIMING.typingIndicatorMinMs);
+}
+// Correct-answer feedback: 180ms in, holds 600ms, then auto-advances (Ch.41.2).
+const CORRECT_AUTO_ADVANCE_MS = TIMING.correctFeedbackInMs + TIMING.correctFeedbackHoldMs;
 
 type Phase = "reading" | "quiz" | "out-of-hearts";
 
@@ -66,7 +75,7 @@ export function LessonPlayerScreen() {
     const t = setTimeout(() => {
       setIsTyping(false);
       setRevealedCount((c) => c + 1);
-    }, TYPING_DELAY_MS);
+    }, randomTypingDelayMs());
     return () => clearTimeout(t);
   }, [phase, revealedCount, lesson]);
 
@@ -236,8 +245,34 @@ function ReadingPhase({
 function ChatBubble({ beat, accent }: { beat: Beat; accent: string }) {
   const character = CHARACTERS[beat.speaker];
   const isHost = beat.speaker !== "bello" && beat.speaker !== "buggy";
+  const reducedMotion = useReducedMotion();
+  // Ch.41.2: chat bubble reveal, Soft-Fade-Slide, 220ms, slide up from 12px
+  // + fade -- plays once on this bubble's own mount (i.e. the moment it's
+  // revealed), not re-triggered on re-render.
+  const progress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: reducedMotion ? 150 : TIMING.chatBubbleRevealMs,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [progress, reducedMotion]);
+
+  const animatedStyle = {
+    opacity: progress,
+    transform: [
+      {
+        translateY: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [TIMING.chatBubbleSlideDistancePx, 0],
+        }),
+      },
+    ],
+  };
+
   return (
-    <View style={styles.bubbleRow}>
+    <Animated.View style={[styles.bubbleRow, animatedStyle]}>
       <View style={[styles.avatar, { backgroundColor: character.accentColor }]}>
         <Text style={styles.avatarInitial}>{character.name[0]}</Text>
       </View>
@@ -247,7 +282,7 @@ function ChatBubble({ beat, accent }: { beat: Beat; accent: string }) {
           <Text style={styles.bubbleText}>{beat.text}</Text>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -258,10 +293,46 @@ function TypingIndicator({ speaker }: { speaker: Beat["speaker"] }) {
       <View style={[styles.avatar, { backgroundColor: character.accentColor }]}>
         <Text style={styles.avatarInitial}>{character.name[0]}</Text>
       </View>
-      <View style={[styles.bubble, styles.typingBubble]}>
-        <Text style={styles.bubbleText}>· · ·</Text>
+      <View style={[styles.bubble, styles.typingBubble, { flexDirection: "row", gap: 4 }]}>
+        <TypingDot delayMs={0} />
+        <TypingDot delayMs={150} />
+        <TypingDot delayMs={300} />
       </View>
     </View>
+  );
+}
+
+/** Ch.45.2: three-dot pulse, each dot scaling 1.0x -> 1.3x -> 1.0x in
+ * sequence with a 150ms offset between dots, looping continuously. This
+ * is the app's one deliberately "borrowed" convention (the near-universal
+ * chat-app typing indicator), per Ch.45.2's own reasoning. */
+function TypingDot({ delayMs }: { delayMs: number }) {
+  const reducedMotion = useReducedMotion();
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (reducedMotion) return; // dots stay static; the "..." reads fine without motion
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delayMs),
+        Animated.timing(scale, { toValue: 1.3, duration: 250, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 250, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reducedMotion, scale, delayMs]);
+
+  return (
+    <Animated.View
+      style={{
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: color.text.onLight.secondary,
+        transform: [{ scale }],
+      }}
+    />
   );
 }
 
@@ -287,6 +358,24 @@ function QuizPhase({
   onContinue: () => void;
 }) {
   const isAnswered = confirmedCorrect !== null;
+  const reducedMotion = useReducedMotion();
+  const shake = useRef(new Animated.Value(0)).current;
+  // Ch.42.3: incorrect feedback runs Gentle-Shake (320ms) on the selected
+  // option, then the correction fades in immediately after -- no overlap,
+  // so the shake fully reads before new information arrives. Correct
+  // feedback has nothing to shake, so its text is visible immediately.
+  const [showCorrection, setShowCorrection] = useState(confirmedCorrect === true);
+
+  useEffect(() => {
+    if (confirmedCorrect === true) {
+      setShowCorrection(true);
+    } else if (confirmedCorrect === false) {
+      setShowCorrection(false);
+      buildShakeAnimation(shake, reducedMotion).start(() => setShowCorrection(true));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmedCorrect]);
+
   return (
     <View style={{ flex: 1, padding: space.lg }}>
       <Text style={styles.eyebrow}>
@@ -309,20 +398,22 @@ function QuizPhase({
           } else if (isSelected) {
             borderColor = accent;
           }
+          const wrapperStyle = isSelected && isAnswered && !isCorrectOption ? getShakeStyle(shake, reducedMotion) : undefined;
           return (
-            <TouchableOpacity
-              key={i}
-              disabled={isAnswered}
-              onPress={() => onSelect(i)}
-              style={[styles.option, { backgroundColor: bg, borderColor }]}
-            >
-              <Text style={styles.optionText}>{opt}</Text>
-            </TouchableOpacity>
+            <Animated.View key={i} style={wrapperStyle}>
+              <TouchableOpacity
+                disabled={isAnswered}
+                onPress={() => onSelect(i)}
+                style={[styles.option, { backgroundColor: bg, borderColor }]}
+              >
+                <Text style={styles.optionText}>{opt}</Text>
+              </TouchableOpacity>
+            </Animated.View>
           );
         })}
       </View>
 
-      {isAnswered ? (
+      {isAnswered && showCorrection ? (
         <View style={{ marginTop: space.lg }}>
           <Text style={styles.feedbackText}>
             {confirmedCorrect ? question.correctFeedback : question.incorrectFeedback}
@@ -333,7 +424,9 @@ function QuizPhase({
             </TouchableOpacity>
           ) : null}
         </View>
-      ) : (
+      ) : null}
+
+      {!isAnswered ? (
         <TouchableOpacity
           disabled={selectedOption === null}
           style={[styles.primaryButton, { backgroundColor: accent, marginTop: space.lg, opacity: selectedOption === null ? 0.4 : 1 }]}
@@ -341,7 +434,7 @@ function QuizPhase({
         >
           <Text style={styles.primaryButtonText}>Check</Text>
         </TouchableOpacity>
-      )}
+      ) : null}
     </View>
   );
 }

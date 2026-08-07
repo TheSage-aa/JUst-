@@ -107,6 +107,19 @@ guard).
   per Ch.1 SS1.7 — there's no backend yet, so there's no analytics-
   retention exception to disclose either; the Settings copy says so
   plainly instead of gesturing at a policy that doesn't exist.
+- **Motion system, Book VI exact values (Ch.68 step 6, partial)** —
+  `src/design/motion.ts` transcribes every Ch.41-46 constant (the four
+  motion primitives, the global timing table, celebration tiers, reduced-
+  motion fallbacks) verbatim, and `useReducedMotion()` wires Ch.46.1.1's
+  OS-level check once for every animated component to share. Applied so
+  far to: Buggy's idle loop (exact +-4px/2400ms + wing-flutter, Ch.42.1),
+  the shared Gentle-Shake gesture used identically for locked-node
+  rejection (Ch.45.3) and incorrect-quiz-answer feedback (Ch.42.3, now
+  correctly sequenced so the correction text waits for the shake to
+  finish), the Gist Mode typing indicator's three-dot pulse (Ch.45.2), and
+  bubble/typing-delay timing (Ch.41.2). See `motion.ts`'s trailing comment
+  for what Book VI specifies that still isn't wired up (Lottie
+  celebrations, character expression-state art, counter animations).
 
 ## What's explicitly not built yet (later Ch.68 steps)
 
@@ -114,10 +127,12 @@ guard).
   authored in Gist Mode only; Drama Mode needs its own dialogue content
   per Book II, which doesn't exist yet, so building the mode's UI first
   would mean fake-navigable screens with nothing behind them.
-- The full animation pass with Book VI's *exact* timing/easing values —
-  current motion (Buggy's idle bob, bubble reveal timing, node shake) is a
-  reasonable approximation, explicitly flagged inline everywhere it
-  appears, pending step 6.
+- **The rest of Book VI's animation pass** (step 6) — Lottie confetti/
+  sparkle layers for Tier 2/3 celebrations, host-character expression-
+  state crossfades (needs art that doesn't exist yet), streak-counter/
+  XP-count-up animations, and a global button-tap Spring-Bounce retrofit
+  across every touchable are all still unbuilt; see `motion.ts`'s
+  trailing comment for the exact list.
 - The full sound pass (Book VII) — step 7. No audio wired yet.
 - The offline/sync layer's *server* half and the full QA suite beyond the
   economy/content tests above (Book VIII/IX) — step 8. Local persistence
