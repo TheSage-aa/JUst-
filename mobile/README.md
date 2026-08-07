@@ -1,12 +1,13 @@
-# Saabi (mobile) — Tracks 1 & 2 complete, Tracks 3-5 remaining
+# Saabi (mobile) — all 5 tracks complete, core loop + progress/settings screens done
 
 React Native / Expo / TypeScript. Built against `docs/bible/SAABI_BIBLE.md`,
-following its Book X Ch.68 build sequence. **Track 1 (HIV & Stigma Basics)
-and Track 2 (Sexual & Reproductive Health) are fully authored and playable
-end to end**, including track completion and badge unlocks, independently
-of each other. Tracks 3-5 (Nana/Mental Health, Dr. Ayo/STIs Beyond HIV,
-Tunde/Chronic Conditions) don't exist yet. See "What's built" vs "What's
-not" below before assuming anything works beyond what's listed.
+following its Book X Ch.68 build sequence. **All 5 tracks are fully authored
+and playable end to end** — HIV & Stigma Basics (Zara), Sexual & Reproductive
+Health (Kemi), Mental Health (Nana), STIs Beyond HIV (Dr. Ayo), and Chronic
+Conditions (Tunde) — each completable independently, each unlocking its own
+badge, with the cross-track "Full Circle" badge unlocking correctly once all
+five are done. See "What's built" vs "What's not" below before assuming
+anything works beyond what's listed.
 
 ## Run it
 
@@ -19,20 +20,20 @@ react-native-mmkv (v4, Nitro Modules) and react-native-reanimated are
 native modules — this requires an Expo dev client / prebuild, **not** Expo
 Go. `npx expo prebuild` before the platform-specific run command if you
 haven't generated native projects yet. The web target (`npm run web`) does
-work directly and was used to produce real, running screenshots during
-development — see the session's shared screenshots for both tracks.
+work directly and was used to produce real, running screenshots throughout
+development.
 
 ## Verify it
 
 ```
-npm test          # 224 tests: full Ch.62 QA-ECON-01..16 economy suite,
+npm test          # 536 tests: full Ch.62 QA-ECON-01..16 economy suite,
                    # Ch.39 SS39.3 content-schema validation + Book I
-                   # compliance checks across all 20 authored lessons
-                   # (Tracks 1 and 2), and end-to-end store integration
-                   # tests proving both tracks' completion paths work
-                   # independently (each unlocks its own badge; neither
-                   # triggers the other's; Full Circle correctly stays
-                   # locked until all 5 exist).
+                   # compliance checks across all 50 authored lessons
+                   # (all 5 tracks), and end-to-end store integration
+                   # tests proving every track's completion path works
+                   # independently (each unlocks its own badge; completing
+                   # all 5 unlocks Full Circle last, sequenced per Rule
+                   # 32.3.2).
 npx tsc --noEmit   # zero errors
 ```
 
@@ -40,9 +41,13 @@ The economy suite is written to assert Book IX's QA-ECON test cases by ID
 — read `src/economy/__tests__/economy.test.ts` alongside Ch.62 to see the
 mapping directly. `src/content/testHelpers/lessonComplianceSuite.ts` holds
 the shared mechanical + compliance checks every track's lessons are run
-through (`track1/__tests__/allLessons.test.ts`, `track2/__tests__/...`).
+through (`track1/__tests__/allLessons.test.ts` through `track5/...`), plus
+each track has its own extra host-character-specific guard tests (Kemi's
+consent-clarity, Nana's diagnostic-language/crisis-lesson checks, Dr.
+Ayo's Authority-Voice-Creep guard, Tunde's enablement-not-restriction
+guard).
 
-## What's built (Ch.68 steps 1-4, Tracks 1-2)
+## What's built (Ch.68 steps 1-5)
 
 - **Design tokens** (`src/design/tokens.ts`) — Appendix A, verbatim.
 - **Data model** (`src/types/models.ts`, `src/types/content.ts`) — Ch.53 +
@@ -50,48 +55,65 @@ through (`track1/__tests__/allLessons.test.ts`, `track2/__tests__/...`).
 - **Economy engine** (`src/economy/economy.ts`) — XP, Hearts, Streaks,
   Badges (Ch.29-32), pure functions, 100% passing against Ch.62.
 - **Character registry** (`src/characters/characters.ts`) — all 7
-  characters' identity/color data, Voice Test checklists as reference
+  characters' identity/color/bio data, Voice Test checklists as reference
   comments.
 - **Cross-track registry** (`src/content/allTracks.ts`) — the app layer
-  (Home, Track Detail, Lesson Player, Lesson Complete, the store's badge
-  evaluation) is fully generalized across however many tracks are
-  authored, not hardcoded to Track 1. Adding Track 3 means authoring its
-  lessons and adding one registry entry — no screen changes required.
+  (Home, Track Detail, Lesson Player, Lesson Complete, Profile, the
+  store's badge evaluation) is fully generalized across however many
+  tracks are authored, not hardcoded to any one track.
 - **Navigation shell** (`src/navigation/`) — tab bar (Home/Profile/
-  Settings) hidden during Lesson Player per Rule 11.2.1-2.
-- **Track 1 (Zara) and Track 2 (Kemi), all 20 lessons** — authored in full
-  beat schema, Gist Mode, each under the 150-word ceiling, each passing
-  every mechanical Ch.39 rule and a Book I compliance check (no
-  second-person myth attribution, no clinical directives, full-fact
-  incorrect feedback, correct Bello/Buggy placement per Rules 35.2.2-3).
-  Track 2 Lesson 4 (Consent) has no Bello beat by deliberate choice, per
-  its own file's compliance note. Each track's Lesson 10 is a
-  self-contained mixed-review lesson — see either lesson10.ts for how the
-  "legible in isolation" vs "mixes questions from Lessons 1-9" schema
-  tension is resolved.
-- **Both tracks' completion paths work end to end and independently**:
-  completing either track's Lesson 10 unlocks that track's own badge
-  ("Myth Crusher" / "Question Asker") without affecting the other track's
-  progress, and surfaces the certification-interest prompt. Verified by
-  integration tests that drive the real store through both tracks
-  separately and together.
+  Settings) hidden during Lesson Player per Rule 11.2.1-2; Character
+  Profile pushed as a titled stack screen.
+- **All 5 tracks, all 50 lessons** — authored in full beat schema, Gist
+  Mode, each under the 150-word ceiling, each passing every mechanical
+  Ch.39 rule and a Book I compliance check (no second-person myth
+  attribution, no clinical directives, full-fact incorrect feedback,
+  correct Bello/Buggy placement per Rules 35.2.2-3). A few lessons with
+  only one MYTH/FACT pair omit Bello by deliberate, commented choice. Each
+  track's Lesson 10 is a self-contained mixed-review lesson.
+- **Every track's completion path works end to end and independently**,
+  including the "Full Circle" badge (all 5 tracks), verified by
+  integration tests that drive the real store through 1, 2, 3, 4, and all
+  5 tracks and assert exactly which badges unlock at each stage.
 - **Core loop screens**: Home, Track Detail, Lesson Player (Gist Mode +
-  nested Quiz Flow), Lesson Complete, Profile, Settings — all wired to the
-  real economy engine and real content for whichever track is being
-  played, not mocked data.
-- **Buggy** appears throughout, memory-aware (Home greeting references
-  real streak state), never static (continuous idle bob via Reanimated),
-  and surfaces the required "frozen"/"reset" streak acknowledgments
-  (Ch.31 SS31.4) rather than staying silent about them.
+  nested Quiz Flow), Lesson Complete — all wired to the real economy
+  engine and real content for whichever track is being played.
+- **Profile** (Ch.18) — level/XP, current + longest streak, hearts,
+  per-track completion percentages (tappable, deep-links to Track
+  Detail), a Buggy-voiced "Buggy remembers" activity card, a badge shelf
+  (unearned badges shown as silhouettes with their condition text
+  visible, never hidden), and a tappable **Badge Detail modal** (Ch.18
+  SS18.2) showing the badge, its condition, and earned date once earned.
+  A "Meet the cast" row is one of Ch.19 SS19.1's two required entry
+  points into the new **Character Profile Screen**.
+- **Character Profile Screen** (Ch.19 SS19.1) — avatar, headline tagline
+  in the character's track-accent color, a short bio written to pass that
+  character's own Voice Test, a "Hosts [Track]" tag, and a button into
+  that track. Reachable by tapping a host's name on Track Detail (the
+  other required entry point) or any avatar in Profile's cast row.
+- **Settings** (Ch.19 SS19.2) — Sound/Haptics (real), a single daily
+  Reminder time picker with non-guilt copy ("skipping it never costs you
+  anything") wired to the user record, and an Account section: email
+  display, a real **Delete Account** action (full local purge — see note
+  below), and a Log Out button that's honest about not being wired to a
+  real account system yet rather than faking a sign-out.
+- **Buggy** appears throughout, memory-aware (Home greeting and Profile's
+  "Buggy remembers" card both reference real economy state), never static
+  (continuous idle bob via Reanimated), and surfaces the required
+  "frozen"/"reset" streak acknowledgments (Ch.31 SS31.4).
 - **Offline-first persistence** — Zustand + MMKV, no network dependency
-  for anything built so far.
+  for anything built so far. `deleteAccount()` wipes the underlying MMKV
+  store directly (not just in-memory state), so it's a genuine full purge
+  per Ch.1 SS1.7 — there's no backend yet, so there's no analytics-
+  retention exception to disclose either; the Settings copy says so
+  plainly instead of gesturing at a policy that doesn't exist.
 
 ## What's explicitly not built yet (later Ch.68 steps)
 
-- Tracks 3-5 (step 4 continues). Home/Track Detail correctly show them as
-  "Coming soon", not fake-navigable.
-- Drama Mode, Badge Detail modal, Character Profile screen, notification
-  preferences (step 5).
+- **Drama Mode** (step 5) — deliberately deferred. All 50 lessons are
+  authored in Gist Mode only; Drama Mode needs its own dialogue content
+  per Book II, which doesn't exist yet, so building the mode's UI first
+  would mean fake-navigable screens with nothing behind them.
 - The full animation pass with Book VI's *exact* timing/easing values —
   current motion (Buggy's idle bob, bubble reveal timing, node shake) is a
   reasonable approximation, explicitly flagged inline everywhere it
@@ -101,11 +123,14 @@ through (`track1/__tests__/allLessons.test.ts`, `track2/__tests__/...`).
   economy/content tests above (Book VIII/IX) — step 8. Local persistence
   works; there's no backend to sync against yet.
 - Auth / Sign Up / Log In (Ch.12 SS12.3) — the app currently runs as a
-  single on-device local user with no account system.
+  single on-device local user with no account system, which is also why
+  Settings' Log Out is an honest no-op rather than a real sign-out.
 - Practice Mode (Ch.30 SS30.5) — the zero-hearts pause and wait-for-
   regeneration path are fully functional; Practice Mode's alternate path
-  is an honest "coming soon" placeholder given the still-limited pool of
-  completed content to draw a review set from.
+  remains an honest "coming soon" placeholder.
+- Push notifications for the Reminder time set in Settings — the
+  preference is captured and persisted, but nothing schedules an actual
+  device notification yet (needs Book VIII's infrastructure).
 
 ## Compliance
 

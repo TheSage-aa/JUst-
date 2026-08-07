@@ -18,6 +18,7 @@ import { SettingsScreen } from "../screens/SettingsScreen";
 import { TrackDetailScreen } from "../screens/TrackDetailScreen";
 import { LessonPlayerScreen } from "../screens/LessonPlayerScreen";
 import { LessonCompleteScreen } from "../screens/LessonCompleteScreen";
+import { CharacterProfileScreen } from "../screens/CharacterProfileScreen";
 import { useAppStore } from "../state/useAppStore";
 import type { RootStackParamList, TabParamList } from "./types";
 
@@ -70,6 +71,7 @@ export function RootNavigator() {
         <Stack.Screen name="TrackDetail" component={TrackDetailScreen} options={{ headerShown: true, title: "" }} />
         <Stack.Screen name="LessonPlayer" component={LessonPlayerScreen} options={{ gestureEnabled: false }} />
         <Stack.Screen name="LessonComplete" component={LessonCompleteScreen} options={{ gestureEnabled: false }} />
+        <Stack.Screen name="CharacterProfile" component={CharacterProfileScreen} options={{ headerShown: true, title: "" }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

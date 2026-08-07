@@ -22,7 +22,8 @@ export function TrackDetailScreen() {
   const trackId = route.params.trackId;
   const accent = trackAccent[trackId];
   const entry = TRACK_CONTENT_REGISTRY[trackId];
-  const hostName = CHARACTERS[ALL_TRACK_META[trackId].hostCharacterId].name;
+  const hostCharacterId = ALL_TRACK_META[trackId].hostCharacterId;
+  const hostName = CHARACTERS[hostCharacterId].name;
   const lessonSummaries = entry?.lessonSummaries ?? [];
 
   const firstIncompleteIndex = lessonSummaries.findIndex(
@@ -32,7 +33,13 @@ export function TrackDetailScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ padding: space.lg, gap: space.md }}>
       <View style={[styles.introBlock, { backgroundColor: accent }]}>
-        <Text style={styles.introHost}>Hosted by {hostName}</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("CharacterProfile", { characterId: hostCharacterId })}
+          accessibilityRole="button"
+          accessibilityLabel={`View ${hostName}'s character profile`}
+        >
+          <Text style={styles.introHost}>Hosted by {hostName} →</Text>
+        </TouchableOpacity>
         <Text style={styles.introTitle}>{ALL_TRACK_META[trackId].title}</Text>
       </View>
 

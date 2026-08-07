@@ -17,6 +17,10 @@ export interface Character {
   hostsTrackId: string | null;
   accentColor: string;
   tagline: string;
+  /** Ch.19 SS19.1's Character Profile Screen short bio -- two to three
+   * sentences, third person, written to pass that character's own Voice
+   * Test (checklists below) rather than generic marketing copy. */
+  bio: string;
 }
 
 export const CHARACTERS: Record<CharacterId, Character> = {
@@ -29,6 +33,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     // (Appendix A.1, color.streak.flame.lit).
     accentColor: color.streak.flameLit,
     tagline: "Not human, and doesn't try to be. Saabi's memory, made into a character.",
+    bio: "Saabi's memory, given a shape. Buggy doesn't lecture and doesn't vanish when a streak breaks — just remembers what's true about your day and says it back to you, briefly.",
   },
   zara: {
     id: "zara",
@@ -36,6 +41,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     hostsTrackId: "track-1-hiv-stigma",
     accentColor: color.track.hiv,
     tagline: "The thing everyone's aunty got wrong.",
+    bio: "Zara has heard every version of the myth already and isn't tired of correcting it — just quick about it, and never at your expense.",
   },
   kemi: {
     id: "kemi",
@@ -43,6 +49,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     hostsTrackId: "track-2-srh",
     accentColor: color.track.srh,
     tagline: "New to a lot of this, on purpose.",
+    bio: "Kemi asks the question first, because she means it — genuine curiosity, not performed beginner energy to make anyone else comfortable.",
   },
   nana: {
     id: "nana",
@@ -50,6 +57,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     hostsTrackId: "track-3-mental-health",
     accentColor: color.track.mentalHealth,
     tagline: "Brings quiet instead of energy.",
+    bio: "Nana slows down on purpose. No clinical language, no fishing for what's wrong — just steadier pacing, and a clear next step when it matters.",
   },
   dr_ayo: {
     id: "dr_ayo",
@@ -57,6 +65,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     hostsTrackId: "track-4-stis",
     accentColor: color.track.sti,
     tagline: "The facts don't have to sound like a lecture.",
+    bio: "Dr. Ayo keeps the facts exact without making them sound like a chart — nothing here is said the way a textbook would say it.",
   },
   tunde: {
     id: "tunde",
@@ -64,6 +73,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     hostsTrackId: "track-5-chronic",
     accentColor: color.track.chronic,
     tagline: "Eating well shouldn't feel like punishment.",
+    bio: "Tunde talks about daily management like it's actually livable, because it is — the hard part gets named, then it's on to what you can do today.",
   },
   bello: {
     id: "bello",
@@ -71,6 +81,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
     hostsTrackId: null,
     accentColor: color.character.bello,
     tagline: "Doesn't own a track, owns the timing.",
+    bio: "Shows up when a moment needs a break, not on a schedule. Bello's jokes land on the absurdity of life, never on the topic itself — and the facts never come from him.",
   },
 };
 

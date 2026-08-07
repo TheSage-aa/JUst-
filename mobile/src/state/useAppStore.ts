@@ -19,7 +19,7 @@ import {
 } from "../economy/economy";
 import type { BadgeId, Economy, Progress, QuizAnswerRecord, User } from "../types/models";
 import { findLessonById, isTrackComplete } from "../content/allTracks";
-import { zustandMmkvStorage } from "./storage";
+import { mmkv, zustandMmkvStorage } from "./storage";
 
 function freshUser(): User {
   return {
@@ -83,6 +83,16 @@ interface AppState {
   dismissStreakRiskBannerForToday: () => void;
   setSoundEnabled: (enabled: boolean) => void;
   setHapticsEnabled: (enabled: boolean) => void;
+  /** Rule 33.2.1: single daily reminder time, user's own choice. Pass null
+   * to turn reminders off. */
+  setReminderTime: (time: string | null) => void;
+  /** Ch.1 SS1.7 / Ch.19 SS19.2: account deletion must fully purge data,
+   * with any analytics-retention exception disclosed plainly. This build
+   * has no backend/analytics pipeline (Book VIII not built yet), so there
+   * is no exception to disclose -- the on-device MMKV store is the only
+   * copy of this data anywhere, so wiping it here is a genuine full purge,
+   * not a partial local reset with a server-side copy left behind. */
+  deleteAccount: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -247,6 +257,22 @@ export const useAppStore = create<AppState>()(
 
       setHapticsEnabled: (enabled) => {
         set((state) => ({ user: { ...state.user, hapticsEnabled: enabled } }));
+      },
+
+      setReminderTime: (time) => {
+        set((state) => ({ user: { ...state.user, notificationReminderTime: time ?? undefined } }));
+      },
+
+      deleteAccount: () => {
+        mmkv.clearAll(); // wipe the underlying store, not just this session's in-memory state
+        set({
+          user: freshUser(),
+          economy: freshEconomy("local-user"),
+          progressByLessonId: {},
+          certificationInterestByTrackId: {},
+          streakRiskBannerShownDate: null,
+          pendingStreakEvent: "none",
+        });
       },
     }),
     {

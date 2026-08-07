@@ -1,5 +1,6 @@
 import type { BadgeId } from "../types/models";
 import type { TrackId } from "../design/tokens";
+import type { CharacterId } from "../characters/characters";
 
 export type RootStackParamList = {
   Tabs: undefined;
@@ -13,6 +14,7 @@ export type RootStackParamList = {
     streakAfter: number;
     isReplay: boolean;
   };
+  CharacterProfile: { characterId: CharacterId };
 };
 
 export type TabParamList = {
