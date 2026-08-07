@@ -2,10 +2,9 @@
  * Lesson Complete -- Ch.17 SS17.1. Warm, brief closure; single "Continue"
  * action back to Track Detail; no auto-suggested next-lesson pressure
  * (Ch.6 SS6.1 item 5). Badge-unlock display + certification-interest
- * prompt (Ch.17 SS17.2) only apply on genuine track completion, which
- * cannot occur yet in this build (only 1/10 lessons of Track 1 exist) --
- * the code path is real and will fire correctly once the other 9 lessons
- * are authored (Ch.68 step 4), it's simply unreachable today.
+ * prompt (Ch.17 SS17.2) apply on genuine track completion -- reachable now
+ * that all 10 of Track 1's lessons are authored: completing Lesson 10
+ * unlocks "Myth Crusher" and shows the certification-interest prompt.
  *
  * Rule 32.3.2 (multi-badge unlocks shown sequentially, each with its own
  * full celebration beat, never stacked) is only partially satisfied here:

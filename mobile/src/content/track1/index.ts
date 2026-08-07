@@ -1,19 +1,20 @@
 /**
- * Track 1 (HIV & Stigma Basics) registry.
- *
- * HONESTY NOTE: per Ch.68 SS68.1's build order, this vertical-slice pass
- * only authors Lesson 1 in the full Ch.39 beat schema (see lesson1.ts).
- * The remaining 9 lesson titles below are carried over from this project's
- * original content draft (docs/tracks/track-1-hiv-stigma-basics.md) so the
- * Track Detail path can honestly render a real 10-node map (Ch.14 SS14.2)
- * with correct titles -- but only Lesson 1 has playable `content`. Nodes
- * 2-10 render as locked with their real title, per Ch.14 SS14.3's "Locked"
- * state, and are NOT fabricated/fake-playable. Authoring the remaining
- * lessons in full beat-script form is Ch.68 step 4, not this pass.
+ * Track 1 (HIV & Stigma Basics) registry. All 10 lessons authored in the
+ * full Ch.39 beat schema (Ch.68 SS68.1 step 3-4) -- see each lessonN.ts
+ * for its own word-budget and rule-placement notes.
  */
 
 import type { Lesson } from "../../types/content";
 import { track1Lesson1 } from "./lesson1";
+import { track1Lesson2 } from "./lesson2";
+import { track1Lesson3 } from "./lesson3";
+import { track1Lesson4 } from "./lesson4";
+import { track1Lesson5 } from "./lesson5";
+import { track1Lesson6 } from "./lesson6";
+import { track1Lesson7 } from "./lesson7";
+import { track1Lesson8 } from "./lesson8";
+import { track1Lesson9 } from "./lesson9";
+import { track1Lesson10 } from "./lesson10";
 
 export interface LessonSummary {
   id: string;
@@ -34,9 +35,17 @@ export const TRACK1_LESSON_SUMMARIES: LessonSummary[] = [
   { id: "track-1-lesson-10", lessonNumber: 10, title: "Bringing It Together" },
 ];
 
-/** Only lessons with authored, Bible-compliant beat scripts. */
 export const TRACK1_LESSON_CONTENT: Record<string, Lesson> = {
   "track-1-lesson-1": track1Lesson1,
+  "track-1-lesson-2": track1Lesson2,
+  "track-1-lesson-3": track1Lesson3,
+  "track-1-lesson-4": track1Lesson4,
+  "track-1-lesson-5": track1Lesson5,
+  "track-1-lesson-6": track1Lesson6,
+  "track-1-lesson-7": track1Lesson7,
+  "track-1-lesson-8": track1Lesson8,
+  "track-1-lesson-9": track1Lesson9,
+  "track-1-lesson-10": track1Lesson10,
 };
 
 export const TRACK1_META = {
