@@ -1,9 +1,12 @@
 /**
- * Shared Jest suite: runs Ch.39 SS39.3 mechanical validation + a Book I
- * compliance check across an arbitrary set of lessons. Factored out here
- * so every track's test file (track1, track2, ...) asserts the same rules
- * instead of re-implementing them -- see track1/__tests__/allLessons.test.ts
- * for the original, single-track version this was extracted from.
+ * Shared Jest suite: runs Ch.39 SS39.3 mechanical validation + Book IX
+ * Ch.59.1's Class A constitutional-scan test cases (QA-CONST-01/03/04/05,
+ * mechanically expanded across every lesson passed in, per Ch.58.1's own
+ * "expand across all 50 lessons" instruction) across an arbitrary set of
+ * lessons. Factored out here so every track's test file (track1, track2,
+ * ...) asserts the same rules instead of re-implementing them -- see
+ * track1/__tests__/allLessons.test.ts for the original, single-track
+ * version this was extracted from.
  */
 import { validateLesson, type Lesson } from "../../types/content";
 
@@ -13,7 +16,7 @@ export function runLessonComplianceSuite(lessons: Lesson[]) {
       expect(validateLesson(lesson)).toEqual([]);
     });
 
-    test("total beat word count is within the 150-word ceiling (Ch.5 SS5.1)", () => {
+    test("QA-CONST-03: total beat word count is within the 150-word ceiling (Ch.5 SS5.1)", () => {
       const total = lesson.beats.reduce((sum, b) => sum + (b.text.match(/\S+/g) || []).length, 0);
       expect(total).toBeLessThanOrEqual(150);
     });
@@ -38,7 +41,7 @@ export function runLessonComplianceSuite(lessons: Lesson[]) {
       });
     });
 
-    test("no beat or quiz feedback text uses second-person myth attribution ('you thought'/'you probably')", () => {
+    test("QA-CONST-01: no beat or quiz feedback text uses second-person myth attribution ('you thought'/'you probably')", () => {
       const allText = [
         ...lesson.beats.map((b) => b.text),
         ...lesson.quiz.questions.flatMap((q) => [q.correctFeedback, q.incorrectFeedback, q.prompt]),
@@ -48,7 +51,7 @@ export function runLessonComplianceSuite(lessons: Lesson[]) {
       expect(allText).not.toMatch(/you (probably|thought|believed)/);
     });
 
-    test("no second-person clinical directive ('you should'/'you need to')", () => {
+    test("QA-CONST-04: no second-person clinical directive ('you should'/'you need to')", () => {
       const allText = [
         ...lesson.beats.map((b) => b.text),
         ...lesson.quiz.questions.flatMap((q) => [q.correctFeedback, q.incorrectFeedback]),
@@ -58,7 +61,7 @@ export function runLessonComplianceSuite(lessons: Lesson[]) {
       expect(allText).not.toMatch(/you (should|need to)/);
     });
 
-    test("every incorrect-answer feedback restates the fact in full (non-trivial length, not just 'wrong')", () => {
+    test("QA-CONST-05: every incorrect-answer feedback restates the fact in full (non-trivial length, not just 'wrong')", () => {
       for (const q of lesson.quiz.questions) {
         expect(q.incorrectFeedback.split(/\s+/).length).toBeGreaterThan(8);
       }

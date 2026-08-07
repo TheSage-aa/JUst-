@@ -26,15 +26,17 @@ development.
 ## Verify it
 
 ```
-npm test          # 547 tests: full Ch.62 QA-ECON-01..16 economy suite,
-                   # Ch.39 SS39.3 content-schema validation + Book I
-                   # compliance checks across all 50 authored lessons
-                   # (all 5 tracks), end-to-end store integration tests
-                   # proving every track's completion path works
-                   # independently (each unlocks its own badge; completing
-                   # all 5 unlocks Full Circle last, sequenced per Rule
-                   # 32.3.2), and the Ch.12 SS12.3 sign-up/log-in/log-out
-                   # local-account action tests.
+npm test          # 555 tests: full Ch.62 QA-ECON-01..16 economy suite,
+                   # Ch.39 SS39.3 content-schema validation + Book IX
+                   # Ch.59.1's Class A constitutional-scan cases
+                   # (QA-CONST-01/03/04/05, ID-tagged) across all 50
+                   # authored lessons (all 5 tracks), end-to-end store
+                   # integration tests proving every track's completion
+                   # path works independently (each unlocks its own
+                   # badge; completing all 5 unlocks Full Circle last,
+                   # sequenced per Rule 32.3.2), the Ch.12 SS12.3 sign-up/
+                   # log-in/log-out local-account action tests, and
+                   # QA-CONST-02/08's schema/certification-copy scans.
 npx tsc --noEmit   # zero errors
 ```
 
@@ -170,12 +172,20 @@ guard).
   celebration sound layer, ambient/music scoping, and character sound
   signatures (Ch.48.2-50) are all unbuilt. See `soundSpec.ts`'s trailing
   comment.
-- The offline/sync layer's *server* half and the full QA suite beyond the
-  economy/content tests above (Book VIII/IX) — step 8. Local persistence
-  works; there's no backend to sync against yet. Sign Up/Log In (above)
-  are real for a single local device profile, but there's still no real
-  server-side account, password hashing, or multi-device sync — that's
-  this same Book VIII gap, not a separate one.
+- The offline/sync layer's *server* half (Book VIII) — step 8. Local
+  persistence works; there's no backend to sync against yet. Sign Up/Log
+  In (above) are real for a single local device profile, but there's
+  still no real server-side account, password hashing, or multi-device
+  sync — that's this same Book VIII gap, not a separate one.
+- Most of Book IX's QA suite (step 8/9) — `src/qa/__tests__/
+  qaConstBookI.test.ts` covers QA-CONST-02 (schema scan) and QA-CONST-08
+  (certification-copy scan), and QA-CONST-01/03/04/05 are ID-tagged
+  inside the per-lesson compliance suite, but the Class B judgment-
+  required checklists (Ch.59.2) and Chapter 60's screen/feature test
+  cases (most need a rendered-component test harness, which isn't set up
+  in this build) are unbuilt. At full expansion Book IX describes several
+  thousand assertions across 17 screens' worth of Class A patterns; this
+  build's coverage is real but partial.
 - Practice Mode (Ch.30 SS30.5) — the zero-hearts pause and wait-for-
   regeneration path are fully functional; Practice Mode's alternate path
   remains an honest "coming soon" placeholder.
