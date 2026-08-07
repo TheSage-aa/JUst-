@@ -13,6 +13,7 @@ import { ALL_TRACK_META, TRACK_CONTENT_REGISTRY } from "../content/allTracks";
 import { CHARACTERS } from "../characters/characters";
 import { buildShakeAnimation, getShakeStyle } from "../utils/gentleShake";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { fireSoundEvent } from "../audio/soundSpec";
 import type { RootStackParamList } from "../navigation/types";
 
 type NodeState = "locked" | "current" | "completed";
@@ -90,6 +91,7 @@ function LessonNode({
   disabledReason: string | null;
 }) {
   const reducedMotion = useReducedMotion();
+  const hapticsEnabled = useAppStore((s) => s.user.hapticsEnabled);
   const shake = useRef(new Animated.Value(0)).current;
   const [showHint, setShowHint] = React.useState(false);
 
@@ -98,7 +100,9 @@ function LessonNode({
       setShowHint(true);
       // Ch.45.3: locked-node rejection reuses the same Gentle-Shake
       // "not yet" gesture as an incorrect quiz answer (Ch.42.3), exact
-      // values from Book VI (Ch.68 step 6).
+      // values from Book VI (Ch.68 step 6), paired with Ch.48.1's
+      // matching "womp family, shorter and quieter" haptic.
+      fireSoundEvent("lockedNodeTap", hapticsEnabled);
       buildShakeAnimation(shake, reducedMotion).start(() => setTimeout(() => setShowHint(false), 1800));
       return;
     }

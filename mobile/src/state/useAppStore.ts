@@ -19,6 +19,7 @@ import {
 } from "../economy/economy";
 import type { BadgeId, Economy, Progress, QuizAnswerRecord, User } from "../types/models";
 import { findLessonById, isTrackComplete } from "../content/allTracks";
+import { fireSoundEvent } from "../audio/soundSpec";
 import { mmkv, zustandMmkvStorage } from "./storage";
 
 function freshUser(): User {
@@ -112,11 +113,18 @@ export const useAppStore = create<AppState>()(
         const now = new Date();
         const today = getLocalDateString(now);
         const yesterday = getLocalDateString(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+        const hapticsEnabled = get().user.hapticsEnabled;
 
         set((state) => {
           let economy = regenerateHearts(state.economy, now);
           const rollover = evaluateStreakRollover(economy, today, yesterday);
           economy = rollover.economy;
+          // Ch.48.1: streak-freeze-consumed gets its own distinct haptic
+          // (a "Success" pulse, matching the frost-chime's distinct
+          // timbre); a reset deliberately gets none -- see soundSpec.ts.
+          if (rollover.event === "frozen") {
+            fireSoundEvent("streakFreezeConsumed", hapticsEnabled);
+          }
           return {
             economy,
             // Don't clobber an event still awaiting acknowledgment from an
@@ -146,6 +154,11 @@ export const useAppStore = create<AppState>()(
       },
 
       recordQuizAnswer: (lessonId, questionId, selectedOptionIndex, wasCorrect, isReplay) => {
+        // Ch.48.1: correct/incorrect each get their own distinct haptic
+        // pairing, fired the moment the answer is confirmed (matching the
+        // Ch.42.3 animation's own "simultaneous with animation start, not
+        // after" requirement).
+        fireSoundEvent(wasCorrect ? "correctAnswer" : "incorrectAnswer", get().user.hapticsEnabled);
         set((state) => {
           const existing = state.progressByLessonId[lessonId];
           if (!existing) return state;
@@ -206,6 +219,10 @@ export const useAppStore = create<AppState>()(
         const economyAfterStreak = isFirstCompletion
           ? incrementStreakOnCompletion(economyAfterXp, today)
           : economyAfterXp;
+
+        if (economyAfterStreak.currentStreak > state.economy.currentStreak) {
+          fireSoundEvent("streakIncrement", state.user.hapticsEnabled); // Ch.43.1 / Ch.48.1
+        }
 
         // Evaluate every authored track's completion state generically --
         // not just the one the just-completed lesson belongs to, since a

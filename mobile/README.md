@@ -120,6 +120,19 @@ guard).
   bubble/typing-delay timing (Ch.41.2). See `motion.ts`'s trailing comment
   for what Book VI specifies that still isn't wired up (Lottie
   celebrations, character expression-state art, counter animations).
+- **Sound spec + haptics, Book VII (Ch.68 step 7, partial)** —
+  `src/audio/soundSpec.ts` transcribes Ch.48.1's full event table (sound
+  character, duration, paired animation, paired haptic) as typed data, and
+  wires the *haptic* half for real via `expo-haptics`, respecting the
+  Settings haptics toggle (which previously existed in the UI but wasn't
+  connected to anything). Wired at: correct/incorrect quiz answers,
+  streak increment, streak-freeze-consumed, and locked-node rejection —
+  each using the exact `ImpactFeedbackStyle`/`NotificationFeedbackType`
+  Ch.48.1 specifies, including the ones that are deliberately *silent*
+  (no haptic on streak reset, per the table). No audio files exist yet,
+  so `fireSoundEvent()` only fires the haptic; see the file's trailing
+  comment for the rest of Book VII that isn't wired (actual sound
+  playback, celebration jingles, character sound signatures).
 
 ## What's explicitly not built yet (later Ch.68 steps)
 
@@ -133,7 +146,11 @@ guard).
   XP-count-up animations, and a global button-tap Spring-Bounce retrofit
   across every touchable are all still unbuilt; see `motion.ts`'s
   trailing comment for the exact list.
-- The full sound pass (Book VII) — step 7. No audio wired yet.
+- **The rest of Book VII's sound pass** (step 7) — no actual audio files
+  or playback exist, only the haptic half of the spec table above; the
+  celebration sound layer, ambient/music scoping, and character sound
+  signatures (Ch.48.2-50) are all unbuilt. See `soundSpec.ts`'s trailing
+  comment.
 - The offline/sync layer's *server* half and the full QA suite beyond the
   economy/content tests above (Book VIII/IX) — step 8. Local persistence
   works; there's no backend to sync against yet.
