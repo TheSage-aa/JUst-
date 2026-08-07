@@ -12,6 +12,7 @@ import type { Lesson } from "../types/content";
 import type { Progress } from "../types/models";
 import { TRACK1_LESSON_CONTENT, TRACK1_LESSON_SUMMARIES, TRACK1_META } from "./track1";
 import { TRACK2_LESSON_CONTENT, TRACK2_LESSON_SUMMARIES, TRACK2_META } from "./track2";
+import { TRACK3_LESSON_CONTENT, TRACK3_LESSON_SUMMARIES, TRACK3_META } from "./track3";
 
 export interface LessonSummary {
   id: string;
@@ -52,6 +53,11 @@ export const TRACK_CONTENT_REGISTRY: Partial<Record<TrackId, TrackRegistryEntry>
     meta: TRACK2_META,
     lessonSummaries: TRACK2_LESSON_SUMMARIES,
     lessonContent: TRACK2_LESSON_CONTENT,
+  },
+  "track-3-mental-health": {
+    meta: TRACK3_META,
+    lessonSummaries: TRACK3_LESSON_SUMMARIES,
+    lessonContent: TRACK3_LESSON_CONTENT,
   },
 };
 

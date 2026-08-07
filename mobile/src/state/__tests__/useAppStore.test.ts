@@ -6,6 +6,7 @@
 import { useAppStore } from "../useAppStore";
 import { TRACK1_LESSON_SUMMARIES } from "../../content/track1";
 import { TRACK2_LESSON_SUMMARIES } from "../../content/track2";
+import { TRACK3_LESSON_SUMMARIES } from "../../content/track3";
 
 function resetStore() {
   useAppStore.setState({
@@ -94,5 +95,19 @@ describe("useAppStore -- Track 2 completion is independent of Track 1 (generaliz
     expect(badgeIds).toContain("myth-crusher");
     expect(badgeIds).toContain("question-asker");
     expect(badgeIds).not.toContain("full-circle"); // needs all 5 tracks, only 2 exist
+  });
+
+  test("completing all 3 authored tracks unlocks all 3 track badges but Full Circle still stays locked", () => {
+    for (const summary of [...TRACK1_LESSON_SUMMARIES, ...TRACK2_LESSON_SUMMARIES, ...TRACK3_LESSON_SUMMARIES]) {
+      useAppStore.getState().startLesson(summary.id);
+      useAppStore.getState().recordQuizAnswer(summary.id, "q1", 0, true, false);
+      useAppStore.getState().completeLesson(summary.id, { isReplay: false });
+    }
+
+    const badgeIds = useAppStore.getState().economy.badgesEarned.map((b) => b.badgeId);
+    expect(badgeIds).toContain("myth-crusher");
+    expect(badgeIds).toContain("question-asker");
+    expect(badgeIds).toContain("quiet-strength");
+    expect(badgeIds).not.toContain("full-circle"); // needs all 5 tracks, only 3 exist
   });
 });
